@@ -1,35 +1,58 @@
-# 引入套件
+# Import tk GUI
 import tkinter as tk
 
-# 建立主視窗和 Frame（把元件變成群組的容器）
+# Build frame
 window = tk.Tk()
-top_frame = tk.Frame(window)
 
-# 將元件分為 top/bottom 兩群並加入主視窗
-top_frame.pack()
-bottom_frame = tk.Frame(window)
-bottom_frame.pack(side=tk.BOTTOM)
+MMIO_frame = tk.Frame(window)
+MMIO_frame.pack(side=tk.TOP)
 
-# 建立事件處理函式（event handler），透過元件 command 參數存取
-def echo_hello():
-    print('hello world :)')
+IO_frame = tk.Frame(window)
+IO_frame.pack(side=tk.TOP)
 
-# 以下為 top 群組
-left_button = tk.Button(top_frame, text='Red', fg='red')
-# 讓系統自動擺放元件，預設為由上而下（靠左）
-left_button.pack(side=tk.LEFT)
+PCI_frame = tk.Frame(window)
+PCI_frame.pack(side=tk.TOP)
 
-middle_button = tk.Button(top_frame, text='Green', fg='green')
-middle_button.pack(side=tk.LEFT)
+#Function
 
-right_button = tk.Button(top_frame, text='Blue', fg='blue')
-right_button.pack(side=tk.LEFT)
+def CalculateMMIO(MmioAddr,MmioData):
+    Addr=MmioAddr.get("1.0","end")
+    print(Addr)
+    Data=MmioData.get("1.0","end")
+    print(Data)
 
-# 以下為 bottom 群組
-# bottom_button 綁定 echo_hello 事件處理，點擊該按鈕會印出 hello world :)
-bottom_button = tk.Button(bottom_frame, text='Black', fg='black', command=echo_hello)
-# 讓系統自動擺放元件（靠下方）
-bottom_button.pack(side=tk.BOTTOM)
 
-# 運行主程式
+def CreateMMIO():
+    NewMmiowindow=tk.Toplevel(window)
+
+    MmioAddr = tk.Text(NewMmiowindow,height=3)
+    MmioData = tk.Text(NewMmiowindow,height=3)
+
+    MmioAddr.pack()
+    MmioData.pack()
+
+    MmioHead = tk.Label(NewMmiowindow, text = "MMIO address")
+    WriteButton = tk.Button(NewMmiowindow, text = "Write",command=lambda : CalculateMMIO(MmioAddr,MmioData))
+
+    MmioHead.pack()
+    WriteButton.pack()
+
+
+def CreateIO():
+    NewIowindow=tk.Toplevel(window)
+
+def CreatePCI():
+    NewPciwindow=tk.Toplevel(window)        
+
+#Button behavior    
+
+MMIO_button = tk.Button(MMIO_frame, text='MMIO address', fg='black', command=CreateMMIO)
+MMIO_button.pack(side=tk.TOP)
+
+IO_button = tk.Button(IO_frame, text='IO address', fg='black', command=CreateIO)
+IO_button.pack(side=tk.TOP)
+
+PCI_button = tk.Button(PCI_frame, text='List PCI Devices', fg='black', command=CreatePCI)
+PCI_button.pack(side=tk.TOP)
+
 window.mainloop()
