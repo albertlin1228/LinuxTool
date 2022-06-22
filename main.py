@@ -1,28 +1,29 @@
 # Import tk GUI
 import tkinter as tk
+import PciBusEnum
 
 # Build frame
 window = tk.Tk()
 
-MMIO_frame = tk.Frame(window)
-MMIO_frame.pack(side=tk.TOP)
+MmioFrame = tk.Frame(window)
+MmioFrame.pack(side=tk.TOP)
 
-IO_frame = tk.Frame(window)
-IO_frame.pack(side=tk.TOP)
+IoFrame = tk.Frame(window)
+IoFrame.pack(side=tk.TOP)
 
-PCI_frame = tk.Frame(window)
-PCI_frame.pack(side=tk.TOP)
+PciFrame = tk.Frame(window)
+PciFrame.pack(side=tk.TOP)
 
 #Function
 
-def CalculateMMIO(MmioAddr,MmioData):
+def CalculateMmio(MmioAddr,MmioData):
     Addr=MmioAddr.get("1.0","end")
     print(Addr)
     Data=MmioData.get("1.0","end")
     print(Data)
 
 
-def CreateMMIO():
+def CreateMmioUi():
     NewMmiowindow=tk.Toplevel(window)
 
     MmioAddr = tk.Text(NewMmiowindow,height=3)
@@ -31,28 +32,29 @@ def CreateMMIO():
     MmioAddr.pack()
     MmioData.pack()
 
-    MmioHead = tk.Label(NewMmiowindow, text = "MMIO address")
-    WriteButton = tk.Button(NewMmiowindow, text = "Write",command=lambda : CalculateMMIO(MmioAddr,MmioData))
+    MmioHead = tk.Label(NewMmiowindow, text = "Mmio address")
+    WriteButton = tk.Button(NewMmiowindow, text = "Write",command=lambda : CalculateMmio(MmioAddr,MmioData))
 
     MmioHead.pack()
     WriteButton.pack()
 
 
-def CreateIO():
+def CreateIoUi():
     NewIowindow=tk.Toplevel(window)
 
-def CreatePCI():
-    NewPciwindow=tk.Toplevel(window)        
+def CreatePciUi():
+    NewPciwindow=tk.Toplevel(window)
+    PciBusEnum.PciEnum()
 
 #Button behavior    
 
-MMIO_button = tk.Button(MMIO_frame, text='MMIO address', fg='black', command=CreateMMIO)
-MMIO_button.pack(side=tk.TOP)
+MmioButton = tk.Button(MmioFrame, text='Mmio address', fg='black', command=CreateMmioUi)
+MmioButton.pack(side=tk.TOP)
 
-IO_button = tk.Button(IO_frame, text='IO address', fg='black', command=CreateIO)
-IO_button.pack(side=tk.TOP)
+IoButton = tk.Button(IoFrame, text='IO address', fg='black', command=CreateIoUi)
+IoButton.pack(side=tk.TOP)
 
-PCI_button = tk.Button(PCI_frame, text='List PCI Devices', fg='black', command=CreatePCI)
-PCI_button.pack(side=tk.TOP)
+PciButton = tk.Button(PciFrame, text='List Pci Devices', fg='black', command=CreatePciUi)
+PciButton.pack(side=tk.TOP)
 
 window.mainloop()
