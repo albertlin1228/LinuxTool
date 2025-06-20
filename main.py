@@ -1,60 +1,44 @@
-# Import tk GUI
-import tkinter as tk
+# Standard Lib
+import array
+
+# Create Lib
 import PciBusEnum
 
-# Build frame
-window = tk.Tk()
+# Global variable
+PfaNumberArray = []
+PfaNumberIndex = 0
 
-MmioFrame = tk.Frame(window)
-MmioFrame.pack(side=tk.TOP)
+def PciEnumOperation():
+    global PfaNumberArray
+    global PfaNumberIndex
 
-IoFrame = tk.Frame(window)
-IoFrame.pack(side=tk.TOP)
+    for Segment in range(8):
+        for Bus in range(256):
+            for Dev in range(32):
+                for Fun in range(8):
+                    PfaNumber = f"{str(Segment).zfill(4)}:{str(Bus).zfill(2)}:{str(Dev).zfill(2)}.{str(Fun)}"
+                    PciBusEnum.Device(PfaNumber)
 
-PciFrame = tk.Frame(window)
-PciFrame.pack(side=tk.TOP)
+                    if PciBusEnum.GlobalExistDevice == 1:
+                        PfaNumberArray.append(PfaNumber)
+                        print("Index",PfaNumberIndex,":",PfaNumber, " VendorId:",PciBusEnum.GlobalVendorId, "DeviceId:", PciBusEnum.GlobalDeviceId)
+                        PfaNumberIndex += 1
 
-#Function
+# Main prompt y
+print("Select Operation:\n0:Select PCI enum operation\n")
+Select = int(input("Selection:"))
 
-def CalculateMmio(MmioAddr,MmioData):
-    Addr=MmioAddr.get("1.0","end")
-    print(Addr)
-    Data=MmioData.get("1.0","end")
-    print(Data)
+match Select:
+    case 0:
+        PciEnumOperation()
+        
+        while True:
+            WhichDevice = int(input("Which device?"))
 
-
-def CreateMmioUi():
-    NewMmiowindow=tk.Toplevel(window)
-
-    MmioAddr = tk.Text(NewMmiowindow,height=3)
-    MmioData = tk.Text(NewMmiowindow,height=3)
-
-    MmioAddr.pack()
-    MmioData.pack()
-
-    MmioHead = tk.Label(NewMmiowindow, text = "Mmio address")
-    WriteButton = tk.Button(NewMmiowindow, text = "Write",command=lambda : CalculateMmio(MmioAddr,MmioData))
-
-    MmioHead.pack()
-    WriteButton.pack()
-
-
-def CreateIoUi():
-    NewIowindow=tk.Toplevel(window)
-
-def CreatePciUi():
-    NewPciwindow=tk.Toplevel(window)
-    PciBusEnum.PciEnum()
-
-#Button behavior    
-
-MmioButton = tk.Button(MmioFrame, text='Mmio address', fg='black', command=CreateMmioUi)
-MmioButton.pack(side=tk.TOP)
-
-IoButton = tk.Button(IoFrame, text='IO address', fg='black', command=CreateIoUi)
-IoButton.pack(side=tk.TOP)
-
-PciButton = tk.Button(PciFrame, text='List Pci Devices', fg='black', command=CreatePciUi)
-PciButton.pack(side=tk.TOP)
-
-window.mainloop()
+            while (WhichDevice <= PfaNumberIndex):
+                """
+                print("Device index",WhichDevice,":",PfaNumberArray[WhichDevice])
+                SelectDevice = PciBusEnum.Device(PfaNumberArray[WhichDevice])
+                SelectDevice.GetVendor(PfaNumberArray[WhichDevice])
+                """
+                break
