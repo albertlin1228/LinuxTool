@@ -30,44 +30,72 @@ def PciEnumOperation():
                         # Save Vid and Did from string file of the /sys/bus/pci/devices/ to hex digit
                         DigitVendor = int(PciBusEnum.GlobalVendorId,16)
                         DigitDevice = int(PciBusEnum.GlobalDeviceId,16)
-                        HexVendor = hex(DigitVendor)
-                        HexDevice = hex(DigitDevice)
                         
-                        gHexVendor[gPfaNumberIndex] = HexVendor
-                        gHexDevice[gPfaNumberIndex] = HexDevice
+                        gHexVendor[gPfaNumberIndex] = str(hex(DigitVendor))
+                        gHexDevice[gPfaNumberIndex] = str(hex(DigitDevice))
 
-                        print("Index",gPfaNumberIndex,":",PfaNumber," VendorId:",HexVendor.zfill(4)," DeviceId:",HexDevice.zfill(4) )
+                        print(f"Index {str(gPfaNumberIndex).zfill(2)} : {PfaNumber} VendorId: {DigitVendor:04X} DeviceId: {DigitDevice:04X}" )
 
                         gPfaNumberIndex += 1
 
 
-# Main prompt y
-print("Select Operation:\n0:Select PCI enum operation\n")
-Select = int(input("Selection:"))
+# Main prompt
 
-match Select:
-    case 0:
-        PciEnumOperation()
-        
-        while True:
-            WhichDevice = int(input("Which device?"))
+while True:
+    print("Select Operation:\n0:Select PCI enum operation\n")
+    Select = int(input("Selection:"))
 
-            while (WhichDevice <= gPfaNumberIndex):
-                PciBusEnum.ListPciRegContent(gHexVendor[WhichDevice],gHexDevice[WhichDevice])
-                """
-                print("Device index",WhichDevice,":",gPfaNumberArray[WhichDevice])
-                SelectDevice = PciBusEnum.Device(gPfaNumberArray[WhichDevice])
-                SelectDevice.GetVendor(gPfaNumberArray[WhichDevice])
-                """
+    match Select:
+        case 0:        
+            gPfaNumberIndex = 0            
+            PciEnumOperation()
 
-                while True:
-                    HeaderLayout,MultiFun = PciBusEnum.CheckTypeHeader(gHexVendor[WhichDevice],gHexDevice[WhichDevice])
-                    if HeaderLayout == 0:
-                        print("Type 0/Pci device")
-                        PciBusEnum.CheckBarRegister(gHexVendor[WhichDevice],gHexDevice[WhichDevice])
-                    else:
-                        print("Type 1/Pci bridge")    
-
+            while True:
+                print("==================================")
+                InputVal = input("Which device?")
+                
+                if (InputVal == ""):
                     break
+                
+                WhichDevice = int(InputVal)
+                print("==================================")
 
-                break
+                while (WhichDevice <= gPfaNumberIndex):
+                    HexDumpArray = PciBusEnum.ListPciRegContent(gHexVendor[WhichDevice],gHexDevice[WhichDevice])
+                    """
+                    print("Device index",WhichDevice,":",gPfaNumberArray[WhichDevice])
+                    SelectDevice = PciBusEnum.Device(gPfaNumberArray[WhichDevice])
+                    SelectDevice.GetVendor(gPfaNumberArray[WhichDevice])
+                    """
+                    # Check Type0/1 device
+                    HeaderLayout,MultiFun = PciBusEnum.CheckTypeHeader(HexDumpArray)
+
+                    print("==================================")
+                    
+                    if HeaderLayout == 0:
+                        print("Type 0(Device)")
+                        PciBusEnum.CheckBarRegister(HexDumpArray)
+                    else:
+                        print("Type 1(Bridge)")
+                        PciBusEnum.CheckBusRelation(HexDumpArray)
+
+                    PciBusEnum.CheckCmdReg(HexDumpArray)
+
+                    # Check PCIe cap
+                    CapHeaderOffset = PciBusEnum.PcieBaseFindCapId(HexDumpArray,0x10)
+                    print(f"Capability Header Offset:{CapHeaderOffset:02X}")
+
+                    # Check PCI/PCIe device
+                    if(CapHeaderOffset == 0):
+                        print("PCI device")
+                    else:
+                        print("PCIe device")
+
+                        # Check maximum/current Link speed
+                        PciBusEnum.GetLinkCap(HexDumpArray,CapHeaderOffset)
+
+                        # Check maximum/current Link width
+                        PciBusEnum.GetLinkStatus(HexDumpArray,CapHeaderOffset)
+
+
+                    break # while (WhichDevice <= gPfaNumberIndex)
