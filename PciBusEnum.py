@@ -1,7 +1,7 @@
 import os
 import subprocess
-import mmap
-import struct
+#import mmap
+#import struct
 """
 from periphery import MMIO
 
@@ -69,6 +69,7 @@ BIT31 = 1 << 31
 
 # Pci configuration space offset
 OFFSET_COMMAND = 0x4                # Command offset
+OFFSET_UE_STATUS = 0x4              # UE status offset
 OFFSET_STATUS = 0x6                 # Status offset
 OFFSET_HEADER_TYPE = 0xE            # Header type offset
 OFFSET_32_BAR0_TYPE = 0x10          # 32 bit BAR0 offset
@@ -700,15 +701,34 @@ def GetLinkStatus(HexDumpArray,CapHeaderOffset):
 
     print("LinkTrain+" if(LinkTrain) else "LinkTrain-", "SlotClock+" if(SlotClock) else "SlotClock-", "DataLinkActive+" if(DataLinkActive) else "DataLinkActive-", "BandWidthMgmt+" if(BandWidthMgmt) else "BandWidthMgmt-", "AutonomousBandWidthMgmt+" if(AutonomousBandWidthMgmt) else "AutonomousBandWidthMgmt-")
 
-def GetAERExtCap(HexDumpArray,CapHeaderOffset):
+def CheckUEStatus(HexDumpArray,CapHeaderOffset):
     print("==================================")
-    print("Link Status:")
-    LinkStatusOffset = CapHeaderOffset + OFFSET_LINK_STATUS
-    Row,Col = TransferOffsetToArray(LinkStatusOffset)
-    LinkStatusValue = ReadByWord(HexDumpArray,Row,Col)
+    print("Uncorrectable Error Status:")
+    
+    UEStatusOffset = CapHeaderOffset + OFFSET_UE_STATUS
+    Row,Col = TransferOffsetToArray(UEStatusOffset)
+    UEStatusValue = ReadByDword(HexDumpArray,Row,Col)
+    print(f"UEStatusValue:{UEStatusValue:08X}")
 
-    CurrentLinkSpeedReg = LinkStatusValue & (BIT0 | BIT1 | BIT2 | BIT3)
+    DataLinkProErr = (UEStatusValue & BIT4) >> 4
+    SurpriseDownErr = (UEStatusValue & BIT5) >> 5
+    PoisonTLPReceived = (UEStatusValue & BIT12) >> 12
+    CompleteTimeOut = (UEStatusValue & BIT14) >> 14
+    CompleterAbort = (UEStatusValue & BIT15) >> 15
+    UnexpectCompletion = (UEStatusValue & BIT16) >> 16
+    ReceiverOverflow = (UEStatusValue & BIT17) >> 17
+    MalformedTLP = (UEStatusValue & BIT18) >> 18
+    ECRCErr = (UEStatusValue & BIT19) >> 19
+    UnsupportRequest = (UEStatusValue & BIT20) >> 20
+    MCBlockTLP = (UEStatusValue & BIT23) >> 23
+    AtomicOPEgressBlock = (UEStatusValue & BIT24) >> 24
+    DMWrRequestEgressBlock = (UEStatusValue & BIT27) >> 27
+    IDECheckFailed = (UEStatusValue & BIT28) >> 28
+    TLPTranslationEgressBlock = (UEStatusValue & BIT31) >> 31
 
+    print("DataLinkProErr+" if(DataLinkProErr) else "DataLinkProErr-", "SurpriseDownErr+" if(SurpriseDownErr) else "SurpriseDownErr-", "PoisonTLPReceived+" if(PoisonTLPReceived) else "PoisonTLPReceived-", "CompleteTimeOut+" if(CompleteTimeOut) else "CompleteTimeOut-", "CompleterAbort+" if(CompleterAbort) else "CompleterAbort-", "UnexpectCompletion+" if(UnexpectCompletion) else "UnexpectCompletion-")
+    print("ReceiverOverflow+" if(ReceiverOverflow) else "ReceiverOverflow-", "MalformedTLP+" if(MalformedTLP) else "MalformedTLP-", "ECRCErr+" if(ECRCErr) else "ECRCErr-", "UnsupportRequest+" if(UnsupportRequest) else "UnsupportRequest-", "MCBlockTLP+" if(MCBlockTLP) else "MCBlockTLP-", "AtomicOPEgressBlock+" if(AtomicOPEgressBlock) else "AtomicOPEgressBlock-", "DMWrRequestEgressBlock+" if(DMWrRequestEgressBlock) else "DMWrRequestEgressBlock-")
+    print("IDECheckFailed+" if(IDECheckFailed) else "IDECheckFailed-", "TLPTranslationEgressBlock+" if(TLPTranslationEgressBlock) else "TLPTranslationEgressBlock-")
 """
     def GetVendor(self, pciid:str):
         self.__vendor = f"{self.__base}/vendor"
