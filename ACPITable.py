@@ -1,5 +1,19 @@
 import subprocess
 
+OFFSET_REG_BIT_WIDTH = 0x1
+OFFSET_REG_BIT_OFFSET = 0x2
+OFFSET_ACCESS_SIZE = 0x3
+OFFSET_ADDRESS = 0x4
+
+def TransferOffsetToArray(OffsetVal):
+    RowVal = 0
+    ColVal = 0
+
+    RowVal = OffsetVal//16
+    ColVal = OffsetVal%16
+
+    return RowVal,ColVal
+
 def GetSignature(HexDumpArray):
     
     # Byte Offset 0x0, Byte Length 0x4
@@ -10,7 +24,7 @@ def GetSignature(HexDumpArray):
 
     Strcpy = chr(Byte0) + chr(Byte1) + chr(Byte2) + chr(Byte3)
 
-    print(f"Signature: {HexDumpArray[0][0]} {HexDumpArray[0][1]} {HexDumpArray[0][2]} {HexDumpArray[0][3]} ({Strcpy})")
+    print(f"[0x00 04]Signature: {HexDumpArray[0][0]} {HexDumpArray[0][1]} {HexDumpArray[0][2]} {HexDumpArray[0][3]} ({Strcpy})")
 
 def GetLength(HexDumpArray):
     
@@ -22,17 +36,17 @@ def GetLength(HexDumpArray):
 
     LengthVal = (Byte3 << 24) | (Byte2 << 16) | (Byte1 << 8) | Byte0 
 
-    print(f"Length: 0x{LengthVal:08X}")
+    print(f"[0x04 04]Length: 0x{LengthVal:08X}")
 
 def GetRevision(HexDumpArray):
     
     # Byte Offset 0x8, Byte Length 0x1
-    print(f"Revision: {HexDumpArray[0][8]}")
+    print(f"[0x08 01]Revision: {HexDumpArray[0][8]}")
 
 def GetChecksum(HexDumpArray):
     
     # Byte Offset 0x9, Byte Length 0x1
-    print(f"Checksum: {HexDumpArray[0][9]}")    
+    print(f"[0x09 01]Checksum: {HexDumpArray[0][9]}")    
 
 def GetOemId(HexDumpArray):
     
@@ -46,7 +60,7 @@ def GetOemId(HexDumpArray):
 
     StrCpy = chr(Byte0) + chr(Byte1) + chr(Byte2) + chr(Byte3) + chr(Byte4) + chr(Byte5)
 
-    print(f"OEMID: {HexDumpArray[0][10]} {HexDumpArray[0][11]} {HexDumpArray[0][12]} {HexDumpArray[0][13]} {HexDumpArray[0][14]} {HexDumpArray[0][15]} ({StrCpy})")        
+    print(f"[0x10 06]OEMID: {HexDumpArray[0][10]} {HexDumpArray[0][11]} {HexDumpArray[0][12]} {HexDumpArray[0][13]} {HexDumpArray[0][14]} {HexDumpArray[0][15]} ({StrCpy})")        
 
 def GetOemTableId(HexDumpArray):
     
@@ -62,7 +76,7 @@ def GetOemTableId(HexDumpArray):
 
     StrCpy = chr(Byte0) + chr(Byte1) + chr(Byte2) + chr(Byte3) + chr(Byte4) + chr(Byte5) + chr(Byte6) + chr(Byte7)
 
-    print(f"OEMID Table ID: {HexDumpArray[1][0]} {HexDumpArray[1][1]} {HexDumpArray[1][2]} {HexDumpArray[1][3]} {HexDumpArray[1][4]} {HexDumpArray[1][5]} {HexDumpArray[1][6]} {HexDumpArray[1][7]} ({StrCpy})")
+    print(f"[0x16 08]OEMID Table ID: {HexDumpArray[1][0]} {HexDumpArray[1][1]} {HexDumpArray[1][2]} {HexDumpArray[1][3]} {HexDumpArray[1][4]} {HexDumpArray[1][5]} {HexDumpArray[1][6]} {HexDumpArray[1][7]} ({StrCpy})")
 
 def GetOemRevision(HexDumpArray):
     
@@ -74,7 +88,7 @@ def GetOemRevision(HexDumpArray):
 
     OemRevision = (Byte3 << 24) | (Byte2 << 16) | (Byte1 << 8) | Byte0 
 
-    print(f"OEM Revision: {OemRevision}")
+    print(f"[0x24 04]OEM Revision: {OemRevision}")
 
 def GetCreaterId(HexDumpArray):
     
@@ -86,7 +100,7 @@ def GetCreaterId(HexDumpArray):
 
     StrCpy = chr(Byte0) + chr(Byte1) + chr(Byte2) + chr(Byte3)
 
-    print(f"Creater ID: {HexDumpArray[1][12]} {HexDumpArray[1][13]} {HexDumpArray[1][14]} {HexDumpArray[1][15]} ({StrCpy})")
+    print(f"[0x28 04]Creater ID: {HexDumpArray[1][12]} {HexDumpArray[1][13]} {HexDumpArray[1][14]} {HexDumpArray[1][15]} ({StrCpy})")
 
 def GetCreaterRevision(HexDumpArray):
     
@@ -98,15 +112,17 @@ def GetCreaterRevision(HexDumpArray):
 
     CreaterRevision = (Byte3 << 24) | (Byte2 << 16) | (Byte1 << 8) | Byte0 
 
-    print(f"Creater Revision: 0x{CreaterRevision:04X}")
+    print(f"[0x32 04]Creater Revision: 0x{CreaterRevision:04X}")
 
-def DumpTable(TableName):
+def DumpGeneralData(TableName):
     HexDumpArray = [[0]*16 for i in range(16)]
 
     DumpSpcrCmd = f"sudo hexdump -C /sys/firmware/acpi/tables/{TableName}"
     TableDump = subprocess.Popen(DumpSpcrCmd, stdout=subprocess.PIPE, text=True, shell=True)
 
-    for RowIndex in range(16):
+    Count = 16
+
+    for RowIndex in range(Count):
 
         ReadLine = TableDump.stdout.readline()
         #print("len(ReadLine):",len(ReadLine))
@@ -151,53 +167,320 @@ def DumpTable(TableName):
     GetOemRevision(HexDumpArray)
     GetCreaterId(HexDumpArray)
     GetCreaterRevision(HexDumpArray)
-        
+
+    return HexDumpArray
+
+def GenericAddressStructure(HexDumpArray, Offset):
+    # Generic Address Structure : Length 12 Byte
+    # Address Space ID
+    print(f"[0x{Offset:02X} 12]")
+    StrCpy = f"[0x{Offset:02X} 00]Address Space ID : "
+    AddressSpaceID = int(HexDumpArray[2][8],16)
+    match AddressSpaceID:
+        case 0:
+            print(f"{StrCpy}0x00 System Memory space")
+        case 1:
+            print(f"{StrCpy}0x01 System I/O space")
+        case 2:
+            print(f"{StrCpy}0x02 PCI Configuration space")
+        case 3:
+            print(f"{StrCpy}0x03 Embedded Controller")
+        case 4:
+            print(f"{StrCpy}0x04 SMBus")
+        case 5:
+            print(f"{StrCpy}0x05 SystemCMOS")
+        case 6:
+            print(f"{StrCpy}0x06 PciBarTarget")
+        case 7:
+            print(f"{StrCpy}0x07 IPMI")
+        case 8:
+            print(f"{StrCpy}0x08 General PurposeIO")
+        case 9:
+            print(f"{StrCpy}0x09 GenericSerialBus")
+        case 10:
+            print(f"{StrCpy}0x0A Platform Communications Channel (PCC)")
+        case 0x7F:
+            print(f"{StrCpy}0x7F Functional Fixed Hardware")
+        case num if num in range(0xB,0x7E):
+            print(f"{StrCpy}Reserved")
+        case num if num in range(0x80,0xBF):
+            print(f"{StrCpy}Reserved")
+        case num if num in range(0xC0,0xFF):
+            print(f"{StrCpy}OEM defined")    
+
+    # Register Bit Width : Offset 1, Length 1 Byte
+    RBWOffset = Offset + OFFSET_REG_BIT_WIDTH
+    Row,Col = TransferOffsetToArray(RBWOffset)
+    RegisterBitWidth = int(HexDumpArray[Row][Col],16)
+    print(f"[0x{RBWOffset:02X} 01]Register Bit Width : {RegisterBitWidth:02X}")
+
+    # Register Bit Offset : Offset 2, Length 1 Byte
+    RBOOffset = Offset + OFFSET_REG_BIT_OFFSET
+    Row,Col = TransferOffsetToArray(RBOOffset)
+    RegisterBitOffset = int(HexDumpArray[Row][Col],16)
+
+    print(f"[0x{RBOOffset:02X} 01]Register Bit Offset : {RegisterBitOffset:02X}")
+
+    # Access Size : Offset 3, length 1 Byte
+    AccessSizeOffset = Offset + OFFSET_ACCESS_SIZE
+    Row,Col = TransferOffsetToArray(AccessSizeOffset)
+    AccessSize = int(HexDumpArray[Row][Col],16)
+    match AccessSize:
+        case 0:
+            print(f"[0x{AccessSizeOffset:02X} 01]Access Size : 0 Undefined (legacy reasons)")
+        case 1:
+            print(f"[0x{AccessSizeOffset:02X} 01]Access Size : 1 Byte access")
+        case 2:
+            print(f"[0x{AccessSizeOffset:02X} 01]Access Size : 2 Word access")
+        case 3:
+            print(f"[0x{AccessSizeOffset:02X} 01]Access Size : 3 Dword access")
+        case 4:
+            print(f"[0x{AccessSizeOffset:02X} 01]Access Size : 4 QWord access")
+    
+    # Address : Offset 4, length 8 Byte
+    AddressOffset = Offset + OFFSET_ADDRESS
+    Row,Col = TransferOffsetToArray(AddressOffset)
+    AddressByte0 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(AddressOffset+1)
+    AddressByte1 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(AddressOffset+2)
+    AddressByte2 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(AddressOffset+3)
+    AddressByte3 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(AddressOffset+4)
+    AddressByte4 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(AddressOffset+5)
+    AddressByte5 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(AddressOffset+6)
+    AddressByte6 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(AddressOffset+7)
+    AddressByte7 = int(HexDumpArray[Row][Col],16)
+
+    AddressVal = (AddressByte7<<56) | (AddressByte6<<48) | (AddressByte5<<40) | (AddressByte4<<32) | (AddressByte3<<24) | (AddressByte2<<16) | (AddressByte1<<8) | AddressByte0
+    print(f"[0x{AddressOffset:02X} 08]Address : 0x{AddressVal:016X}")
+
+def DumpSPCR(HexDumpArray):
+
+    OFFSET_INTERRUPT_TYPE = 52
+    OFFSET_IRQ = 53
+    OFFSET_GLOBAL_SYS_INTERRUPT = 54
+    OFFSET_BAUD_RATE = 58
+    OFFSET_PARITY = 59
+    OFFSET_STOP_BITS = 60
+    OFFSET_FLOW_CONTROL = 61
+    OFFSET_TER_TYPE = 62
+    OFFSET_LANGUAGE = 63
+    OFFSET_PCI_DEV_ID = 64
+    OFFSET_PCI_VEN_ID = 66
+    OFFSET_PCI_BUS = 68
+    OFFSET_PCI_DEV = 69
+    OFFSET_PCI_FUN = 70
+    OFFSET_PCI_FLAGS = 71    
+    OFFSET_PCI_SEG = 75 
+    OFFSET_UART_CLK_FREQ = 76
+
+    # Interface Type : Offset 36(0x24), Length 1 Byte
+    InterfaceType = int(HexDumpArray[2][4],16)
+    print(f"[0x24 01]Interface Type:{InterfaceType}")
+
+    # Reserved : Offset 37(0x25), Length 3 Byte
+    Reserved = (int(HexDumpArray[2][7],16) << 16) | (int(HexDumpArray[2][6],16) << 8) | int(HexDumpArray[2][5],16)
+    print(f"[0x25 03]Reserved:0x{Reserved:08X}")
+
+    print("==================================")
+
+    print("Generic Address Structure")
+    SpcrGasOffset = 0x28
+    GenericAddressStructure(HexDumpArray,SpcrGasOffset)
+
+    print("==================================")
+
+    # Interrupt Type : Offset 52, Length 1 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_INTERRUPT_TYPE)
+    InterruptType = int(HexDumpArray[Row][Col],16)
+    print(f"[0x34 01]Interrupt Type : {InterruptType}")
+
+    # IRQ : Offset 53, Length 1 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_IRQ)
+    IRQ = int(HexDumpArray[Row][Col],16)
+    print(f"[0x35 01]PC-AT-compatible IRQ : {IRQ}")
+
+    # Global System Interrupt : Offset 54, Length 4 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_GLOBAL_SYS_INTERRUPT)
+    IRQByte0 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(OFFSET_GLOBAL_SYS_INTERRUPT+1)
+    IRQByte1 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(OFFSET_GLOBAL_SYS_INTERRUPT+2)
+    IRQByte2 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(OFFSET_GLOBAL_SYS_INTERRUPT+3)
+    IRQByte3 = int(HexDumpArray[Row][Col],16)
+
+    IRQ = (IRQByte3<<24) | (IRQByte2<<16) | (IRQByte1<<8) | IRQByte0
+
+    print(f"[0x36 04]Global System Interrupt : 0x{IRQ:08X}")
+
+    # Baud Rate : Offset 58, Length 1 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_BAUD_RATE)
+    BaudRate = int(HexDumpArray[Row][Col],16)
+    match BaudRate:
+        case 0:
+            print(f"[0x3A 01]Baud Rate : {BaudRate}")
+        case 3:
+            print(f"[0x3A 01]Baud Rate : {BaudRate} (9600)")
+        case 4:
+            print(f"[0x3A 01]Baud Rate : {BaudRate} (19200)")
+        case 6:
+            print(f"[0x3A 01]Baud Rate : {BaudRate} (57600)")
+        case 7:
+            print(f"[0x3A 01]Baud Rate : {BaudRate} (115200)")
+        case _:
+            print(f"[0x3A 01]Baud Rate : {BaudRate} (Reserved)")
+
+    # Parity : Offset 59, Length 1 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_PARITY)
+    Parity = int(HexDumpArray[Row][Col],16)
+    print(f"[0x3B 01]Parity : 0x{Parity:02X}")
+
+    # Stop Bits : Offset 60, Length 1 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_STOP_BITS)
+    StopBits = int(HexDumpArray[Row][Col],16)
+    print(f"[0x3C 01]Stop Bits : 0x{StopBits:02X}")
+
+    # Flow Control : Offset 61, Length 1 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_FLOW_CONTROL)
+    FlowControl = int(HexDumpArray[Row][Col],16)
+    print(f"[0x3D 01]Flow Control : 0x{FlowControl:02X}")
+
+    # Terminal Type : Offset 62, Length 1 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_TER_TYPE)
+    TerminalType = int(HexDumpArray[Row][Col],16)
+    match TerminalType:
+        case 0:
+            print(f"[0x3E 01]Terminal Type : 0x{TerminalType} (VT100)")
+        case 1:
+            print(f"[0x3E 01]Terminal Type : 0x{TerminalType} (Extended VT100 (VT100+))")
+        case 2:
+            print(f"[0x3E 01]Terminal Type : 0x{TerminalType} (VT-UTF8)")
+        case 3:
+            print(f"[0x3E 01]Terminal Type : 0x{TerminalType} (ANSI)")
+        case _:
+            print(f"[0x3E 01]Terminal Type : 0x{TerminalType} (Reserved)")
+    
+    # Language : Offset 63, Length 1 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_LANGUAGE)
+    Language = int(HexDumpArray[Row][Col],16)
+    print(f"[0x3E 01]Language : 0x{Language:02X}")
+
+    # PCI device id : Offset 64, Length 2 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_PCI_DEV_ID)
+    PciDevIdByte0 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(OFFSET_PCI_DEV_ID+1)
+    PciDevIdByte1 = int(HexDumpArray[Row][Col],16)
+
+    PciDevId = (PciDevIdByte1<<8) | PciDevIdByte0
+    print(f"[0x40 02]PCI device id : 0x{PciDevId:04X}")
+
+     # PCI vendor id : Offset 66, Length 2 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_PCI_VEN_ID)
+    PciVenIdByte0 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(OFFSET_PCI_DEV_ID+1)
+    PciVenIdByte1 = int(HexDumpArray[Row][Col],16)
+
+    PciVenId = (PciVenIdByte1<<8) | PciVenIdByte0
+    print(f"[0x42 02]PCI vendor id : 0x{PciVenId:04X}")   
+
+    # Pci Bus Number : Offset 68, Length 1 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_PCI_BUS)
+    PciBusNum = int(HexDumpArray[Row][Col],16)
+    print(f"[0x44 01]Pci Bus Number : 0x{PciBusNum:02X}")
+
+    # Pci Device Number : Offset 69, Length 1 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_PCI_DEV)
+    PciDevNum = int(HexDumpArray[Row][Col],16)
+    print(f"[0x45 01]Pci Device Number : 0x{PciDevNum:02X}")
+
+    # Pci Function Number : Offset 70, Length 1 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_PCI_FUN)
+    PciFunNum = int(HexDumpArray[Row][Col],16)
+    print(f"[0x46 01]Pci Function Number : 0x{PciFunNum:02X}")    
+
+     # PCI Flags : Offset 71, Length 4 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_PCI_FLAGS)
+    PciFlagsByte0 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(OFFSET_PCI_FLAGS+1)
+    PciFlagsByte1 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(OFFSET_PCI_FLAGS+2)
+    PciFlagsByte2 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(OFFSET_PCI_FLAGS+3)
+    PciFlagsByte3 = int(HexDumpArray[Row][Col],16)
+
+    PciFlags = (PciFlagsByte3<<24) | (PciFlagsByte2<<16) | (PciFlagsByte1<<8) | PciFlagsByte0
+    print(f"[0x47 04]PCI Flags : 0x{PciFlags:08X}") 
+
+    # Pci Segment : Offset 75, Length 1 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_PCI_SEG)
+    PciSegNum = int(HexDumpArray[Row][Col],16)
+    print(f"[0x4B 01]Pci Segment Number : 0x{PciSegNum:02X}")
+
+     # UART Clock Frequency : Offset 76, Length 4 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_UART_CLK_FREQ)
+    UartClkByte0 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(OFFSET_UART_CLK_FREQ+1)
+    UartClkByte1 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(OFFSET_UART_CLK_FREQ+2)
+    UartClkByte2 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(OFFSET_UART_CLK_FREQ+3)
+    UartClkByte3 = int(HexDumpArray[Row][Col],16)
+
+    UartClk = (UartClkByte3<<24) | (UartClkByte2<<16) | (UartClkByte1<<8) | UartClkByte0
+    print(f"[0x4C 04]UART Clock Frequency : 0x{UartClk:08X}")             
 
 def DumpAcpiTable(AcpiTableString):
     match AcpiTableString:
         case "SPCR":
-            DumpTable("SPCR")
+            HexDumpArray = DumpGeneralData("SPCR")
+            DumpSPCR(HexDumpArray)
         case "MCFG":
-            DumpTable("MCFG")
+            HexDumpArray = DumpGeneralData("MCFG")
         case "GTDT":
-            DumpTable("GTDT")
+            HexDumpArray = DumpGeneralData("GTDT")
         case "APMT":
-            DumpTable("APMT")
+            HexDumpArray = DumpGeneralData("APMT")
         case "EINJ":
-            DumpTable("EINJ")
+            HexDumpArray = DumpGeneralData("EINJ")
         case "APIC":
-            DumpTable("APIC")
+            HexDumpArray = DumpGeneralData("APIC")
         case "PCCT":
-            DumpTable("PCCT")
+            HexDumpArray = DumpGeneralData("PCCT")
         case "SSDT2":
-            DumpTable("SSDT2")
+            HexDumpArray = DumpGeneralData("SSDT2")
         case "HMAT":
-            DumpTable("HMAT")
+            HexDumpArray = DumpGeneralData("HMAT")
         case "IORT":
-            DumpTable("IORT")
+            HexDumpArray = DumpGeneralData("IORT")
         case "SLIT":
-            DumpTable("SLIT")
+            HexDumpArray = DumpGeneralData("SLIT")
         case "SPMI":
-            DumpTable("SPMI")
+            HexDumpArray = DumpGeneralData("SPMI")
         case "SDEI":
-            DumpTable("SDEI")
+            HexDumpArray = DumpGeneralData("SDEI")
         case "DSDT":
-            DumpTable("DSDT")
+            HexDumpArray = DumpGeneralData("DSDT")
         case "SRAT":
-            DumpTable("SRAT")
+            HexDumpArray = DumpGeneralData("SRAT")
         case "DBG2":
-            DumpTable("DBG2")
+            HexDumpArray = DumpGeneralData("DBG2")
         case "HEST":
-            DumpTable("HEST")
+            HexDumpArray = DumpGeneralData("HEST")
         case "SSDT3":
-            DumpTable("SSDT3")
+            HexDumpArray = DumpGeneralData("SSDT3")
         case "FACP":
-            DumpTable("FACP")
+            HexDumpArray = DumpGeneralData("FACP")
         case "SSDT1":
-            DumpTable("SSDT1")
+            HexDumpArray = DumpGeneralData("SSDT1")
         case "RAS2":
-            DumpTable("RAS2")
+            HexDumpArray = DumpGeneralData("RAS2")
         case "AGDI":
-            DumpTable("AGDI")
+            HexDumpArray = DumpGeneralData("AGDI")
         case "PPTT":
-            DumpTable("PPTT")
+            HexDumpArray = DumpGeneralData("PPTT")
