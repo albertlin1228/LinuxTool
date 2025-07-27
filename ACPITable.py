@@ -38,6 +38,8 @@ def GetLength(HexDumpArray):
 
     print(f"[0x04 04]Length: 0x{LengthVal:08X}")
 
+    return LengthVal
+
 def GetRevision(HexDumpArray):
     
     # Byte Offset 0x8, Byte Length 0x1
@@ -433,7 +435,76 @@ def DumpSPCR(HexDumpArray):
     UartClkByte3 = int(HexDumpArray[Row][Col],16)
 
     UartClk = (UartClkByte3<<24) | (UartClkByte2<<16) | (UartClkByte1<<8) | UartClkByte0
-    print(f"[0x4C 04]UART Clock Frequency : 0x{UartClk:08X}")             
+    print(f"[0x4C 04]UART Clock Frequency : 0x{UartClk:08X}")   
+
+def ConfigSpaceStructure(HexDumpArray, StrOffset):
+    BaseAddrByte = {}
+    Reserved = {}
+
+    OFFSET_CON_SPACE_STR = 44
+    OFFSET_PCI_SEG = 8
+    OFFSET_START_BUS = 10
+    OFFSET_END_BUS = 11
+    OFFSET_RESERVED = 12
+    
+    for i in range(8):
+        Row,Col = TransferOffsetToArray(OFFSET_CON_SPACE_STR + StrOffset + i)
+        BaseAddrByte[i] = int(HexDumpArray[Row][Col],16) 
+
+    BaseAddr = (BaseAddrByte[7]<<56) | (BaseAddrByte[6]<<48) | (BaseAddrByte[5]<<40) | (BaseAddrByte[4]<<32) | (BaseAddrByte[3]<<24) | (BaseAddrByte[2]<<16) | (BaseAddrByte[1]<<8) | BaseAddrByte[0]
+    print(f"[0x{(OFFSET_CON_SPACE_STR + StrOffset):02X} 08]Base Address : 0x{BaseAddr:016X}")
+
+    # Pci Seg : Offset 8, Length 2 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_CON_SPACE_STR + StrOffset + OFFSET_PCI_SEG)
+    PciSegByte0 = int(HexDumpArray[Row][Col],16)
+    Row,Col = TransferOffsetToArray(OFFSET_CON_SPACE_STR + StrOffset + OFFSET_PCI_SEG + 1)
+    PciSegByte1 = int(HexDumpArray[Row][Col],16)
+
+    PciSeg = PciSegByte1 << 8 | PciSegByte0
+    print(f"[0x{(OFFSET_CON_SPACE_STR + StrOffset + OFFSET_PCI_SEG):02X} 02]Pci Segment Group Number: 0x{PciSeg:04X}")
+
+    # Pci Start Bus : Offset 10, Length 1 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_CON_SPACE_STR + StrOffset + OFFSET_START_BUS)
+    PciStartBus = int(HexDumpArray[Row][Col],16)    
+    print(f"[0x{(OFFSET_CON_SPACE_STR + StrOffset + OFFSET_START_BUS):02X} 01]Pci Start Bus: 0x{PciStartBus:02X}")
+    # Pci End Bus : Offset 11, Length 1 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_CON_SPACE_STR + StrOffset + OFFSET_END_BUS)
+    PciEndBus = int(HexDumpArray[Row][Col],16)     
+    print(f"[0x{(OFFSET_CON_SPACE_STR + StrOffset + OFFSET_END_BUS):02X} 01]Pci End Bus: 0x{PciEndBus:02X}")
+
+    # Reserved : Offset 12, Length 4 Byte
+    for i in range(4):
+        Row,Col = TransferOffsetToArray(OFFSET_CON_SPACE_STR + StrOffset + OFFSET_RESERVED + i)
+        Reserved[i] = int(HexDumpArray[Row][Col],16)
+    ReservedVal = (Reserved[3]<<24) | (Reserved[2]<<16) | (Reserved[1]<<8) | Reserved[0]
+             
+    print(f"[0x{(OFFSET_CON_SPACE_STR + StrOffset + OFFSET_RESERVED):02X} 04]Reserved: 0x{ReservedVal:08X}")    
+
+def DumpMCFG(HexDumpArray):
+    ReservedByte = {}
+
+    OFFSET_RESERVED = 36
+    OFFSET_CON_SPACE_STR = 44
+
+    # Reserved : Offset 36, Length 8 Byte
+    for i in range(8):
+        Row,Col = TransferOffsetToArray(OFFSET_RESERVED+i)
+        ReservedByte[i] = int(HexDumpArray[Row][Col],16) 
+
+    Reserved = (ReservedByte[7]<<56) | (ReservedByte[6]<<48) | (ReservedByte[5]<<40) | (ReservedByte[4]<<32) | (ReservedByte[3]<<24) | (ReservedByte[2]<<16) | (ReservedByte[1]<<8) | ReservedByte[0]
+    print(f"[0x24 08]Reserved : 0x{Reserved:016X}")
+
+    # Read table length
+    Length = GetLength(HexDumpArray)
+
+    StructureNum = (Length - OFFSET_CON_SPACE_STR + 1) // 16
+    print("Structure Number:",StructureNum)
+
+    # Configuration space base address allocation structure : Offset 44, each of length 16 Byte
+    for i in range(StructureNum):
+        print("==================================")
+        ConfigSpaceStructure(HexDumpArray, i*16)
+        
 
 def DumpAcpiTable(AcpiTableString):
     match AcpiTableString:
@@ -442,6 +513,7 @@ def DumpAcpiTable(AcpiTableString):
             DumpSPCR(HexDumpArray)
         case "MCFG":
             HexDumpArray = DumpGeneralData("MCFG")
+            DumpMCFG(HexDumpArray)
         case "GTDT":
             HexDumpArray = DumpGeneralData("GTDT")
         case "APMT":
