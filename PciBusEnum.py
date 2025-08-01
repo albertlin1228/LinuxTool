@@ -1,5 +1,6 @@
 import os
 import subprocess
+import CommonLib
 #import mmap
 #import struct
 """
@@ -31,40 +32,6 @@ def PciEnum():
 GlobalExistDevice = 0
 GlobalVendorId = 0
 GlobalDeviceId = 0
-
-# Bit definition
-BIT0 = 1
-BIT1 = 1 << 1
-BIT2 = 1 << 2
-BIT3 = 1 << 3
-BIT4 = 1 << 4
-BIT5 = 1 << 5
-BIT6 = 1 << 6
-BIT7 = 1 << 7
-BIT8 = 1 << 8
-BIT9 = 1 << 9
-BIT10 = 1 << 10
-BIT11 = 1 << 11
-BIT12 = 1 << 12
-BIT13 = 1 << 13
-BIT14 = 1 << 14
-BIT15 = 1 << 15
-BIT16 = 1 << 16
-BIT17 = 1 << 17
-BIT18 = 1 << 18
-BIT19 = 1 << 19
-BIT20 = 1 << 20
-BIT21 = 1 << 21
-BIT22 = 1 << 22
-BIT23 = 1 << 23
-BIT24 = 1 << 24
-BIT25 = 1 << 25
-BIT26 = 1 << 26
-BIT27 = 1 << 27
-BIT28 = 1 << 28
-BIT29 = 1 << 29
-BIT30 = 1 << 30
-BIT31 = 1 << 31
 
 
 # Pci configuration space offset
@@ -236,7 +203,7 @@ def CheckCmdReg(HexDumpArray):
     Byte0 = int(HexDumpArray[Row][Col],16)
     Byte1 = int(HexDumpArray[Row][Col+1],16)
 
-    print("IoSpace+" if(Byte0 & BIT0) else "IoSpace-","MemorySpace+" if(Byte0 & BIT1) else "MemorySpace-","BusMaster+" if(Byte0 & BIT2) else "BusMaster-","ParityErrorResponse+" if(Byte0 & BIT6) else "ParityErrorResponse-","SERR+" if(Byte1 & BIT0) else "SERR-")
+    print("IoSpace+" if(Byte0 & CommonLib.BIT0) else "IoSpace-","MemorySpace+" if(Byte0 & CommonLib.BIT1) else "MemorySpace-","BusMaster+" if(Byte0 & CommonLib.BIT2) else "BusMaster-","ParityErrorResponse+" if(Byte0 & CommonLib.BIT6) else "ParityErrorResponse-","SERR+" if(Byte1 & CommonLib.BIT0) else "SERR-")
     print("==================================")
 
 def CheckTypeHeader(HexDumpArray):
@@ -265,15 +232,15 @@ def CheckBarRegister(HexDumpArray):
 
     Bar0Value = ReadByDword(HexDumpArray,Row,Col)
 
-    if( ( (Bar0Value & BIT3) >> 3) == 1 ):
+    if( ( (Bar0Value & CommonLib.BIT3) >> 3) == 1 ):
         Prefetchable = 1
     else:
         Prefetchable = 0
 
-    if (Bar0Value & BIT0) == True:
+    if (Bar0Value & CommonLib.BIT0) == True:
         print("IO space indicator")
     else:
-        if ((Bar0Value & (BIT1 | BIT2)) >> 1) == BIT1:
+        if ((Bar0Value & (CommonLib.BIT1 | CommonLib.BIT2)) >> 1) == CommonLib.BIT1:
             print("64 bits Memory space indicator","Prefetchable" if(Prefetchable == 1) else "Non Prefetchable")
 
             for BarIndex in range(6): 
@@ -293,7 +260,7 @@ def CheckBarRegister(HexDumpArray):
             Bar2Value = Bar64ValueArray[5] << 32 | Bar64ValueArray[4]
             print(f"BAR 2 : 0x{Bar2Value:016X}")
 
-        elif ((Bar0Value & (BIT1 | BIT2)) >> 1) == 0:
+        elif ((Bar0Value & (CommonLib.BIT1 | CommonLib.BIT2)) >> 1) == 0:
             print("32 bits Memory space indicator","Prefetchable" if(Prefetchable == 1) else "Non Prefetchable")
             print(f"BAR 0 : 0x{Bar0Value:08X}")
             Bar32ValueArray[0] = Bar0Value
@@ -333,7 +300,7 @@ def PcieBaseFindCapId(HexDumpArray,CapId):
         Row,Col = TransferOffsetToArray(CapHeaderOffset)
 
         # The bottom two bits are Reserved and must be set to 00b
-        CapHeaderOffset = int(HexDumpArray[Row][Col],16) & ~(BIT1|BIT2)
+        CapHeaderOffset = int(HexDumpArray[Row][Col],16) & ~(CommonLib.BIT1 | CommonLib.BIT2)
 
         while (CapHeaderOffset != 0 and CapHeaderId != 0xFF):
             
@@ -380,7 +347,7 @@ def GetPcieCapRegister(HexDumpArray,CapHeaderOffset):
     Row,Col = TransferOffsetToArray(PcieCapOffset)
     PcieCapValue = ReadByWord(HexDumpArray,Row,Col)
 
-    DeviceTypeReg = ( PcieCapValue & (BIT4 | BIT5 | BIT6 | BIT7 ) ) >> 4
+    DeviceTypeReg = ( PcieCapValue & (CommonLib.BIT4 | CommonLib.BIT5 | CommonLib.BIT6 | CommonLib.BIT7 ) ) >> 4
 
     match DeviceTypeReg:
         case 0:
@@ -402,10 +369,10 @@ def GetPcieCapRegister(HexDumpArray,CapHeaderOffset):
         case 8:
             print("PCI/PCI-X to PCI Express Bridge")
 
-    SlotImplementReg = ( PcieCapValue & BIT8 ) >> 8
+    SlotImplementReg = ( PcieCapValue & CommonLib.BIT8 ) >> 8
     print("Slot Implemented+" if (SlotImplementReg == 1) else "Slot Implemented-" )
 
-    IntMsgNum = ( PcieCapValue & (BIT9 | BIT10 | BIT11 | BIT12 | BIT13 ) ) >> 9
+    IntMsgNum = ( PcieCapValue & (CommonLib.BIT9 | CommonLib.BIT10 | CommonLib.BIT11 | CommonLib.BIT12 | CommonLib.BIT13 ) ) >> 9
     print("IntMsgNum:",IntMsgNum)
 
 def GetDeviceCap(HexDumpArray,CapHeaderOffset):
@@ -415,7 +382,7 @@ def GetDeviceCap(HexDumpArray,CapHeaderOffset):
     Row,Col = TransferOffsetToArray(DeviceCapOffset)
     DeviceCapValue = ReadByDword(HexDumpArray,Row,Col)
 
-    MaxPayloadSize = DeviceCapValue & ( BIT0 | BIT1 | BIT2)
+    MaxPayloadSize = DeviceCapValue & ( CommonLib.BIT0 | CommonLib.BIT1 | CommonLib.BIT2)
     match MaxPayloadSize:
         case 0:
             print("128 bytes max payload size")
@@ -434,10 +401,10 @@ def GetDeviceCap(HexDumpArray,CapHeaderOffset):
         case 7:
             print("Reserved")
 
-    PhantomFun = (DeviceCapValue & ( BIT3 | BIT4)) >> 3
+    PhantomFun = (DeviceCapValue & ( CommonLib.BIT3 | CommonLib.BIT4)) >> 3
     print("PhantomFun:",PhantomFun)
 
-    L0Latency = (DeviceCapValue & ( BIT6 | BIT7 | BIT8)) >> 6
+    L0Latency = (DeviceCapValue & ( CommonLib.BIT6 | CommonLib.BIT7 | CommonLib.BIT8)) >> 6
     match L0Latency:
         case 0:
             print("L0Latency:Maximum of 64 ns")
@@ -456,7 +423,7 @@ def GetDeviceCap(HexDumpArray,CapHeaderOffset):
         case 7:
             print("No limit")
 
-    L1Latency = (DeviceCapValue & ( BIT9 | BIT10 | BIT11)) >> 9
+    L1Latency = (DeviceCapValue & ( CommonLib.BIT9 | CommonLib.BIT10 | CommonLib.BIT11)) >> 9
     match L1Latency:
         case 0:
             print("L1Latency:Maximum of 1 us")
@@ -482,9 +449,9 @@ def GetDeviceControl(HexDumpArray,CapHeaderOffset):
     Row,Col = TransferOffsetToArray(DeviceControlOffset)
     DeviceControlValue = ReadByWord(HexDumpArray,Row,Col)
 
-    print("CorrectableErrorReporting+" if(DeviceControlValue & BIT0) else "CorrectableErrorReporting-", "NonFatalErrorReporting+" if(DeviceControlValue & BIT1) else "NonFatalErrorReporting-","FatalErrorReporting+" if(DeviceControlValue & BIT2) else "FatalErrorReporting-","UnsupportedRequestReporting+" if(DeviceControlValue & BIT3) else "UnsupportedRequestReporting-", "AuxPowerEnabled+" if(DeviceControlValue & BIT10) else "AuxPowerEnabled-")
+    print("CorrectableErrorReporting+" if(DeviceControlValue & CommonLib.BIT0) else "CorrectableErrorReporting-", "NonFatalErrorReporting+" if(DeviceControlValue & CommonLib.BIT1) else "NonFatalErrorReporting-","FatalErrorReporting+" if(DeviceControlValue & CommonLib.BIT2) else "FatalErrorReporting-","UnsupportedRequestReporting+" if(DeviceControlValue & CommonLib.BIT3) else "UnsupportedRequestReporting-", "AuxPowerEnabled+" if(DeviceControlValue & CommonLib.BIT10) else "AuxPowerEnabled-")
         
-    MaxPayloadSize = ( DeviceControlValue & ( BIT5 | BIT6 | BIT7) ) >> 5
+    MaxPayloadSize = ( DeviceControlValue & ( CommonLib.BIT5 | CommonLib.BIT6 | CommonLib.BIT7) ) >> 5
     match MaxPayloadSize:
         case 0:
             print("128 bytes max payload size")
@@ -503,7 +470,7 @@ def GetDeviceControl(HexDumpArray,CapHeaderOffset):
         case 7:
             print("Reserved")
 
-    MaxReadRequest = ( DeviceControlValue & ( BIT12 | BIT13 | BIT14) ) >> 12
+    MaxReadRequest = ( DeviceControlValue & ( CommonLib.BIT12 | CommonLib.BIT13 | CommonLib.BIT14) ) >> 12
     match MaxReadRequest:
         case 0:
             print("128 bytes max Read Request size")
@@ -529,7 +496,7 @@ def GetDeviceStatus(HexDumpArray,CapHeaderOffset):
     Row,Col = TransferOffsetToArray(DeviceStatusOffset)
     DeviceStatusValue = ReadByWord(HexDumpArray,Row,Col)    
 
-    print("CorrectableErrorDetected+" if(DeviceStatusValue & BIT0) else "CorrectableErrorDetected-", "NonFatalErrorDetected+" if(DeviceStatusValue & BIT1) else "NonFatalErrorDetected-", "FatalErrorDetected+" if(DeviceStatusValue & BIT2) else "FatalErrorDetected-", "UnsupportedErrorDetected+" if(DeviceStatusValue & BIT3) else "UnsupportedErrorDetected-", "AuxPowerDetected+" if(DeviceStatusValue & BIT4) else "AuxPowerDetected-","TransactionsPending+" if(DeviceStatusValue & BIT5) else "TransactionsPending-")                    
+    print("CorrectableErrorDetected+" if(DeviceStatusValue & CommonLib.BIT0) else "CorrectableErrorDetected-", "NonFatalErrorDetected+" if(DeviceStatusValue & CommonLib.BIT1) else "NonFatalErrorDetected-", "FatalErrorDetected+" if(DeviceStatusValue & CommonLib.BIT2) else "FatalErrorDetected-", "UnsupportedErrorDetected+" if(DeviceStatusValue & CommonLib.BIT3) else "UnsupportedErrorDetected-", "AuxPowerDetected+" if(DeviceStatusValue & CommonLib.BIT4) else "AuxPowerDetected-","TransactionsPending+" if(DeviceStatusValue & CommonLib.BIT5) else "TransactionsPending-")                    
 
 def GetLinkCap(HexDumpArray,CapHeaderOffset):
     print("==================================")
@@ -539,7 +506,7 @@ def GetLinkCap(HexDumpArray,CapHeaderOffset):
     LinkCapValue = ReadByDword(HexDumpArray,Row,Col)
     # print(f"LinkCapValue:{LinkCapValue:04X}")
 
-    MaxLinkSpeedReg = LinkCapValue & (BIT0 | BIT1 | BIT2 | BIT3 )
+    MaxLinkSpeedReg = LinkCapValue & (CommonLib.BIT0 | CommonLib.BIT1 | CommonLib.BIT2 | CommonLib.BIT3 )
 
     match MaxLinkSpeedReg:
         case 1:
@@ -555,7 +522,7 @@ def GetLinkCap(HexDumpArray,CapHeaderOffset):
         case 6:
             print("Maximum Link Speed: 64.0 GT/s")
 
-    MaxLinkWidthReg = (LinkCapValue & ( BIT4|BIT5|BIT6|BIT7|BIT8|BIT9) ) >> 4
+    MaxLinkWidthReg = (LinkCapValue & ( CommonLib.BIT4 | CommonLib.BIT5 | CommonLib.BIT6 | CommonLib.BIT7 | CommonLib.BIT8 | CommonLib.BIT9) ) >> 4
 
     match MaxLinkWidthReg:
         case 1:
@@ -571,7 +538,7 @@ def GetLinkCap(HexDumpArray,CapHeaderOffset):
         case 32:
             print("Maximum Link Width: x32")       
 
-    ASPMSupport = (LinkCapValue & (BIT10 | BIT11)) >> 10 
+    ASPMSupport = (LinkCapValue & (CommonLib.BIT10 | CommonLib.BIT11)) >> 10 
     match ASPMSupport:
         case 0:
             print("No ASPM Support")
@@ -582,7 +549,7 @@ def GetLinkCap(HexDumpArray,CapHeaderOffset):
         case 3:
             print("L0s and L1 Supported")
 
-    L0ExitLatency = (LinkCapValue & (BIT12 | BIT13 | BIT14)) >> 12
+    L0ExitLatency = (LinkCapValue & (CommonLib.BIT12 | CommonLib.BIT13 | CommonLib.BIT14)) >> 12
     match L0ExitLatency:
         case 0:
             print("L0ExitLatency: Less than 64 ns")
@@ -601,7 +568,7 @@ def GetLinkCap(HexDumpArray,CapHeaderOffset):
         case 7:
             print("L0ExitLatency: More than 4 μs")
 
-    L1ExitLatency = (LinkCapValue & (BIT15 | BIT16 | BIT17)) >> 15 
+    L1ExitLatency = (LinkCapValue & (CommonLib.BIT15 | CommonLib.BIT16 | CommonLib.BIT17)) >> 15 
     match L1ExitLatency:                              
         case 0:
             print("L1ExitLatency: Less than 1 ns")
@@ -620,11 +587,11 @@ def GetLinkCap(HexDumpArray,CapHeaderOffset):
         case 7:
             print("L1ExitLatency: More than 64 μs")
 
-    ClockPowerMgmt = (LinkCapValue & BIT18) >> 18 
-    SurpriseDownErrorReport = (LinkCapValue & BIT19) >> 19
-    DataLinkLayerActiveReport = (LinkCapValue & BIT20) >> 20
-    LinkBandWidthNotification = (LinkCapValue & BIT21) >> 21
-    AspmOptionCom = (LinkCapValue & BIT22) >> 22
+    ClockPowerMgmt = (LinkCapValue & CommonLib.BIT18) >> 18 
+    SurpriseDownErrorReport = (LinkCapValue & CommonLib.BIT19) >> 19
+    DataLinkLayerActiveReport = (LinkCapValue & CommonLib.BIT20) >> 20
+    LinkBandWidthNotification = (LinkCapValue & CommonLib.BIT21) >> 21
+    AspmOptionCom = (LinkCapValue & CommonLib.BIT22) >> 22
 
     print("ClockPowerMgmt+" if(ClockPowerMgmt) else "ClockPowerMgmt-", "SurpriseDownErrorReport+" if(SurpriseDownErrorReport) else "SurpriseDownErrorReport-", "DataLinkLayerActiveReport+" if(DataLinkLayerActiveReport) else "DataLinkLayerActiveReport-", "LinkBandWidthNotification+" if(LinkBandWidthNotification) else "LinkBandWidthNotification-", "AspmOptionCom+" if(AspmOptionCom) else "AspmOptionCom-")
 
@@ -635,12 +602,12 @@ def GetLinkControl(HexDumpArray,CapHeaderOffset):
     Row,Col = TransferOffsetToArray(LinkControlOffset)
     LinkControlValue = ReadByWord(HexDumpArray,Row,Col)
 
-    AspmControl = (LinkControlValue & (BIT0 | BIT1)) 
-    ReadCompletionBoundary = (LinkControlValue & BIT3) >> 3
-    LinkDisable = (LinkControlValue & BIT4) >> 4
-    CommonClock = (LinkControlValue & BIT5) >> 5
-    ExtendSynch = (LinkControlValue & BIT7) >> 7
-    ClockPowerMgmt = (LinkControlValue & BIT8) >> 8
+    AspmControl = (LinkControlValue & (CommonLib.BIT0 | CommonLib.BIT1)) 
+    ReadCompletionBoundary = (LinkControlValue & CommonLib.BIT3) >> 3
+    LinkDisable = (LinkControlValue & CommonLib.BIT4) >> 4
+    CommonClock = (LinkControlValue & CommonLib.BIT5) >> 5
+    ExtendSynch = (LinkControlValue & CommonLib.BIT7) >> 7
+    ClockPowerMgmt = (LinkControlValue & CommonLib.BIT8) >> 8
 
     match AspmControl:
         case 0:
@@ -661,7 +628,7 @@ def GetLinkStatus(HexDumpArray,CapHeaderOffset):
     Row,Col = TransferOffsetToArray(LinkStatusOffset)
     LinkStatusValue = ReadByWord(HexDumpArray,Row,Col)
 
-    CurrentLinkSpeedReg = LinkStatusValue & (BIT0 | BIT1 | BIT2 | BIT3)
+    CurrentLinkSpeedReg = LinkStatusValue & (CommonLib.BIT0 | CommonLib.BIT1 | CommonLib.BIT2 | CommonLib.BIT3)
 
     match CurrentLinkSpeedReg:
         case 1:
@@ -677,7 +644,7 @@ def GetLinkStatus(HexDumpArray,CapHeaderOffset):
         case 6:
             print("Current Link Speed: 64.0 GT/s")
 
-    CurrentLinkWidthReg = (LinkStatusValue & (BIT4 | BIT5 | BIT6 | BIT7 | BIT8 | BIT9 ) ) >> 4
+    CurrentLinkWidthReg = (LinkStatusValue & (CommonLib.BIT4 | CommonLib.BIT5 | CommonLib.BIT6 | CommonLib.BIT7 | CommonLib.BIT8 | CommonLib.BIT9 ) ) >> 4
 
     match CurrentLinkWidthReg:
         case 1:
@@ -693,11 +660,11 @@ def GetLinkStatus(HexDumpArray,CapHeaderOffset):
         case 32:
             print("Current Link Width: x32")
 
-    LinkTrain = (LinkStatusValue & BIT11) >> 11
-    SlotClock = (LinkStatusValue & BIT12) >> 12
-    DataLinkActive = (LinkStatusValue & BIT13) >> 13
-    BandWidthMgmt = (LinkStatusValue & BIT14) >> 14
-    AutonomousBandWidthMgmt = (LinkStatusValue & BIT15) >> 15
+    LinkTrain = (LinkStatusValue & CommonLib.BIT11) >> 11
+    SlotClock = (LinkStatusValue & CommonLib.BIT12) >> 12
+    DataLinkActive = (LinkStatusValue & CommonLib.BIT13) >> 13
+    BandWidthMgmt = (LinkStatusValue & CommonLib.BIT14) >> 14
+    AutonomousBandWidthMgmt = (LinkStatusValue & CommonLib.BIT15) >> 15
 
     print("LinkTrain+" if(LinkTrain) else "LinkTrain-", "SlotClock+" if(SlotClock) else "SlotClock-", "DataLinkActive+" if(DataLinkActive) else "DataLinkActive-", "BandWidthMgmt+" if(BandWidthMgmt) else "BandWidthMgmt-", "AutonomousBandWidthMgmt+" if(AutonomousBandWidthMgmt) else "AutonomousBandWidthMgmt-")
 
@@ -710,21 +677,21 @@ def CheckUEStatus(HexDumpArray,CapHeaderOffset):
     UEStatusValue = ReadByDword(HexDumpArray,Row,Col)
     print(f"UEStatusValue:{UEStatusValue:08X}")
 
-    DataLinkProErr = (UEStatusValue & BIT4) >> 4
-    SurpriseDownErr = (UEStatusValue & BIT5) >> 5
-    PoisonTLPReceived = (UEStatusValue & BIT12) >> 12
-    CompleteTimeOut = (UEStatusValue & BIT14) >> 14
-    CompleterAbort = (UEStatusValue & BIT15) >> 15
-    UnexpectCompletion = (UEStatusValue & BIT16) >> 16
-    ReceiverOverflow = (UEStatusValue & BIT17) >> 17
-    MalformedTLP = (UEStatusValue & BIT18) >> 18
-    ECRCErr = (UEStatusValue & BIT19) >> 19
-    UnsupportRequest = (UEStatusValue & BIT20) >> 20
-    MCBlockTLP = (UEStatusValue & BIT23) >> 23
-    AtomicOPEgressBlock = (UEStatusValue & BIT24) >> 24
-    DMWrRequestEgressBlock = (UEStatusValue & BIT27) >> 27
-    IDECheckFailed = (UEStatusValue & BIT28) >> 28
-    TLPTranslationEgressBlock = (UEStatusValue & BIT31) >> 31
+    DataLinkProErr = (UEStatusValue & CommonLib.BIT4) >> 4
+    SurpriseDownErr = (UEStatusValue & CommonLib.BIT5) >> 5
+    PoisonTLPReceived = (UEStatusValue & CommonLib.BIT12) >> 12
+    CompleteTimeOut = (UEStatusValue & CommonLib.BIT14) >> 14
+    CompleterAbort = (UEStatusValue & CommonLib.BIT15) >> 15
+    UnexpectCompletion = (UEStatusValue & CommonLib.BIT16) >> 16
+    ReceiverOverflow = (UEStatusValue & CommonLib.BIT17) >> 17
+    MalformedTLP = (UEStatusValue & CommonLib.BIT18) >> 18
+    ECRCErr = (UEStatusValue & CommonLib.BIT19) >> 19
+    UnsupportRequest = (UEStatusValue & CommonLib.BIT20) >> 20
+    MCBlockTLP = (UEStatusValue & CommonLib.BIT23) >> 23
+    AtomicOPEgressBlock = (UEStatusValue & CommonLib.BIT24) >> 24
+    DMWrRequestEgressBlock = (UEStatusValue & CommonLib.BIT27) >> 27
+    IDECheckFailed = (UEStatusValue & CommonLib.BIT28) >> 28
+    TLPTranslationEgressBlock = (UEStatusValue & CommonLib.BIT31) >> 31
 
     print("DataLinkProErr+" if(DataLinkProErr) else "DataLinkProErr-", "SurpriseDownErr+" if(SurpriseDownErr) else "SurpriseDownErr-", "PoisonTLPReceived+" if(PoisonTLPReceived) else "PoisonTLPReceived-", "CompleteTimeOut+" if(CompleteTimeOut) else "CompleteTimeOut-", "CompleterAbort+" if(CompleterAbort) else "CompleterAbort-", "UnexpectCompletion+" if(UnexpectCompletion) else "UnexpectCompletion-")
     print("ReceiverOverflow+" if(ReceiverOverflow) else "ReceiverOverflow-", "MalformedTLP+" if(MalformedTLP) else "MalformedTLP-", "ECRCErr+" if(ECRCErr) else "ECRCErr-", "UnsupportRequest+" if(UnsupportRequest) else "UnsupportRequest-", "MCBlockTLP+" if(MCBlockTLP) else "MCBlockTLP-", "AtomicOPEgressBlock+" if(AtomicOPEgressBlock) else "AtomicOPEgressBlock-", "DMWrRequestEgressBlock+" if(DMWrRequestEgressBlock) else "DMWrRequestEgressBlock-")

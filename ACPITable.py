@@ -1,5 +1,7 @@
 import subprocess
 
+import CommonLib
+
 OFFSET_REG_BIT_WIDTH = 0x1
 OFFSET_REG_BIT_OFFSET = 0x2
 OFFSET_ACCESS_SIZE = 0x3
@@ -13,6 +15,50 @@ def TransferOffsetToArray(OffsetVal):
     ColVal = OffsetVal%16
 
     return RowVal,ColVal
+
+def Call2BytesDecode(Offset, HexDumpArray):
+    TempByte = {}
+    Temp = 0
+
+    for i in range(2):
+        Row,Col = TransferOffsetToArray( Offset + i )
+        TempByte[i] = int(HexDumpArray[Row][Col],16) 
+        Temp |= ( TempByte[i] << (8 * i) )
+
+    return Temp
+
+def Call3BytesDecode(Offset, HexDumpArray):
+    TempByte = {}
+    Temp = 0
+
+    for i in range(3):
+        Row,Col = TransferOffsetToArray( Offset + i )
+        TempByte[i] = int(HexDumpArray[Row][Col],16) 
+        Temp |= ( TempByte[i] << (8 * i) )
+
+    return Temp
+
+def Call4BytesDecode(Offset, HexDumpArray):
+    TempByte = {}
+    Temp = 0
+
+    for i in range(4):
+        Row,Col = TransferOffsetToArray( Offset + i )
+        TempByte[i] = int(HexDumpArray[Row][Col],16) 
+        Temp |= ( TempByte[i] << (8 * i) )
+
+    return Temp
+
+def Call8BytesDecode(Offset, HexDumpArray):
+    TempByte = {}
+    Temp = 0
+
+    for i in range(8):
+        Row,Col = TransferOffsetToArray( Offset + i )
+        TempByte[i] = int(HexDumpArray[Row][Col],16) 
+        Temp |= ( TempByte[i] << (8 * i) )
+
+    return Temp
 
 def GetSignature(HexDumpArray):
     
@@ -28,15 +74,9 @@ def GetSignature(HexDumpArray):
 
 def GetLength(HexDumpArray):
     
+    OFFSET_LENGTH = 4
     # Byte Offset 0x4, Byte Length 0x4
-    Byte0 = int(HexDumpArray[0][4],16)
-    Byte1 = int(HexDumpArray[0][5],16)
-    Byte2 = int(HexDumpArray[0][6],16)
-    Byte3 = int(HexDumpArray[0][7],16)
-
-    LengthVal = (Byte3 << 24) | (Byte2 << 16) | (Byte1 << 8) | Byte0 
-
-    print(f"[0x04 04]Length: 0x{LengthVal:08X}")
+    LengthVal = Call4BytesDecode(OFFSET_LENGTH, HexDumpArray)
 
     return LengthVal
 
@@ -52,7 +92,7 @@ def GetChecksum(HexDumpArray):
 
 def GetOemId(HexDumpArray):
     
-    # Byte Offset 0x10, Byte Length 0x6
+    # Byte Offset 10, Byte Length 0x6
     Byte0 = int(HexDumpArray[0][10],16)
     Byte1 = int(HexDumpArray[0][11],16)
     Byte2 = int(HexDumpArray[0][12],16)
@@ -62,11 +102,11 @@ def GetOemId(HexDumpArray):
 
     StrCpy = chr(Byte0) + chr(Byte1) + chr(Byte2) + chr(Byte3) + chr(Byte4) + chr(Byte5)
 
-    print(f"[0x10 06]OEMID: {HexDumpArray[0][10]} {HexDumpArray[0][11]} {HexDumpArray[0][12]} {HexDumpArray[0][13]} {HexDumpArray[0][14]} {HexDumpArray[0][15]} ({StrCpy})")        
+    print(f"[0x0A 06]OEMID: {HexDumpArray[0][10]} {HexDumpArray[0][11]} {HexDumpArray[0][12]} {HexDumpArray[0][13]} {HexDumpArray[0][14]} {HexDumpArray[0][15]} ({StrCpy})")        
 
 def GetOemTableId(HexDumpArray):
     
-    # Byte Offset 0x16, Byte Length 0x8
+    # Byte Offset 16, Byte Length 0x8
     Byte0 = int(HexDumpArray[1][0],16)
     Byte1 = int(HexDumpArray[1][1],16)
     Byte2 = int(HexDumpArray[1][2],16)
@@ -78,23 +118,18 @@ def GetOemTableId(HexDumpArray):
 
     StrCpy = chr(Byte0) + chr(Byte1) + chr(Byte2) + chr(Byte3) + chr(Byte4) + chr(Byte5) + chr(Byte6) + chr(Byte7)
 
-    print(f"[0x16 08]OEMID Table ID: {HexDumpArray[1][0]} {HexDumpArray[1][1]} {HexDumpArray[1][2]} {HexDumpArray[1][3]} {HexDumpArray[1][4]} {HexDumpArray[1][5]} {HexDumpArray[1][6]} {HexDumpArray[1][7]} ({StrCpy})")
+    print(f"[0x10 08]OEMID Table ID: {HexDumpArray[1][0]} {HexDumpArray[1][1]} {HexDumpArray[1][2]} {HexDumpArray[1][3]} {HexDumpArray[1][4]} {HexDumpArray[1][5]} {HexDumpArray[1][6]} {HexDumpArray[1][7]} ({StrCpy})")
 
 def GetOemRevision(HexDumpArray):
     
-    # Byte Offset 0x24, Byte Length 0x4
-    Byte0 = int(HexDumpArray[1][8],16)
-    Byte1 = int(HexDumpArray[1][9],16)
-    Byte2 = int(HexDumpArray[1][10],16)
-    Byte3 = int(HexDumpArray[1][11],16)
-
-    OemRevision = (Byte3 << 24) | (Byte2 << 16) | (Byte1 << 8) | Byte0 
-
-    print(f"[0x24 04]OEM Revision: {OemRevision}")
+    OFFSET_OEM_REV = 24
+    # Byte Offset 24, Byte Length 0x4
+    OemRevision = Call4BytesDecode(OFFSET_OEM_REV, HexDumpArray)
+    print(f"[0x18 04]OEM Revision: {OemRevision}")
 
 def GetCreaterId(HexDumpArray):
     
-    # Byte Offset 0x28, Byte Length 0x4
+    # Byte Offset 28, Byte Length 0x4
     Byte0 = int(HexDumpArray[1][12],16)
     Byte1 = int(HexDumpArray[1][13],16)
     Byte2 = int(HexDumpArray[1][14],16)
@@ -102,19 +137,14 @@ def GetCreaterId(HexDumpArray):
 
     StrCpy = chr(Byte0) + chr(Byte1) + chr(Byte2) + chr(Byte3)
 
-    print(f"[0x28 04]Creater ID: {HexDumpArray[1][12]} {HexDumpArray[1][13]} {HexDumpArray[1][14]} {HexDumpArray[1][15]} ({StrCpy})")
+    print(f"[0x1C 04]Creater ID: {HexDumpArray[1][12]} {HexDumpArray[1][13]} {HexDumpArray[1][14]} {HexDumpArray[1][15]} ({StrCpy})")
 
 def GetCreaterRevision(HexDumpArray):
     
-    # Byte Offset 0x32, Byte Length 0x4
-    Byte0 = int(HexDumpArray[2][0],16)
-    Byte1 = int(HexDumpArray[2][1],16)
-    Byte2 = int(HexDumpArray[2][2],16)
-    Byte3 = int(HexDumpArray[2][3],16)
-
-    CreaterRevision = (Byte3 << 24) | (Byte2 << 16) | (Byte1 << 8) | Byte0 
-
-    print(f"[0x32 04]Creater Revision: 0x{CreaterRevision:04X}")
+    OFFSET_REVISION = 32
+    # Byte Offset 32, Byte Length 0x4
+    CreaterRevision = Call4BytesDecode(OFFSET_REVISION, HexDumpArray)
+    print(f"[0x20 04]Creater Revision: 0x{CreaterRevision:04X}")
 
 def DumpGeneralData(TableName):
     HexDumpArray = [[0]*16 for i in range(16)]
@@ -161,7 +191,8 @@ def DumpGeneralData(TableName):
             print(f"{HexDumpArray[RowIndex][ColIndex]}")      
     """
     GetSignature(HexDumpArray)
-    GetLength(HexDumpArray)
+    Length = GetLength(HexDumpArray)
+    print(f"[0x04 04]Length: 0x{Length:08X}")
     GetRevision(HexDumpArray)
     GetChecksum(HexDumpArray)
     GetOemId(HexDumpArray)
@@ -241,24 +272,7 @@ def GenericAddressStructure(HexDumpArray, Offset):
     
     # Address : Offset 4, length 8 Byte
     AddressOffset = Offset + OFFSET_ADDRESS
-    Row,Col = TransferOffsetToArray(AddressOffset)
-    AddressByte0 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(AddressOffset+1)
-    AddressByte1 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(AddressOffset+2)
-    AddressByte2 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(AddressOffset+3)
-    AddressByte3 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(AddressOffset+4)
-    AddressByte4 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(AddressOffset+5)
-    AddressByte5 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(AddressOffset+6)
-    AddressByte6 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(AddressOffset+7)
-    AddressByte7 = int(HexDumpArray[Row][Col],16)
-
-    AddressVal = (AddressByte7<<56) | (AddressByte6<<48) | (AddressByte5<<40) | (AddressByte4<<32) | (AddressByte3<<24) | (AddressByte2<<16) | (AddressByte1<<8) | AddressByte0
+    AddressVal = Call8BytesDecode(AddressOffset, HexDumpArray)
     print(f"[0x{AddressOffset:02X} 08]Address : 0x{AddressVal:016X}")
 
 def DumpSPCR(HexDumpArray):
@@ -308,17 +322,7 @@ def DumpSPCR(HexDumpArray):
     print(f"[0x35 01]PC-AT-compatible IRQ : {IRQ}")
 
     # Global System Interrupt : Offset 54, Length 4 Byte
-    Row,Col = TransferOffsetToArray(OFFSET_GLOBAL_SYS_INTERRUPT)
-    IRQByte0 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(OFFSET_GLOBAL_SYS_INTERRUPT+1)
-    IRQByte1 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(OFFSET_GLOBAL_SYS_INTERRUPT+2)
-    IRQByte2 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(OFFSET_GLOBAL_SYS_INTERRUPT+3)
-    IRQByte3 = int(HexDumpArray[Row][Col],16)
-
-    IRQ = (IRQByte3<<24) | (IRQByte2<<16) | (IRQByte1<<8) | IRQByte0
-
+    IRQ = Call4BytesDecode(OFFSET_GLOBAL_SYS_INTERRUPT, HexDumpArray)
     print(f"[0x36 04]Global System Interrupt : 0x{IRQ:08X}")
 
     # Baud Rate : Offset 58, Length 1 Byte
@@ -374,12 +378,7 @@ def DumpSPCR(HexDumpArray):
     print(f"[0x3E 01]Language : 0x{Language:02X}")
 
     # PCI device id : Offset 64, Length 2 Byte
-    Row,Col = TransferOffsetToArray(OFFSET_PCI_DEV_ID)
-    PciDevIdByte0 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(OFFSET_PCI_DEV_ID+1)
-    PciDevIdByte1 = int(HexDumpArray[Row][Col],16)
-
-    PciDevId = (PciDevIdByte1<<8) | PciDevIdByte0
+    PciDevId = Call2BytesDecode(OFFSET_PCI_DEV_ID, HexDumpArray)
     print(f"[0x40 02]PCI device id : 0x{PciDevId:04X}")
 
      # PCI vendor id : Offset 66, Length 2 Byte
@@ -406,17 +405,8 @@ def DumpSPCR(HexDumpArray):
     PciFunNum = int(HexDumpArray[Row][Col],16)
     print(f"[0x46 01]Pci Function Number : 0x{PciFunNum:02X}")    
 
-     # PCI Flags : Offset 71, Length 4 Byte
-    Row,Col = TransferOffsetToArray(OFFSET_PCI_FLAGS)
-    PciFlagsByte0 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(OFFSET_PCI_FLAGS+1)
-    PciFlagsByte1 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(OFFSET_PCI_FLAGS+2)
-    PciFlagsByte2 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(OFFSET_PCI_FLAGS+3)
-    PciFlagsByte3 = int(HexDumpArray[Row][Col],16)
-
-    PciFlags = (PciFlagsByte3<<24) | (PciFlagsByte2<<16) | (PciFlagsByte1<<8) | PciFlagsByte0
+    # PCI Flags : Offset 71, Length 4 Byte
+    PciFlags = Call4BytesDecode(OFFSET_PCI_FLAGS, HexDumpArray)
     print(f"[0x47 04]PCI Flags : 0x{PciFlags:08X}") 
 
     # Pci Segment : Offset 75, Length 1 Byte
@@ -424,22 +414,11 @@ def DumpSPCR(HexDumpArray):
     PciSegNum = int(HexDumpArray[Row][Col],16)
     print(f"[0x4B 01]Pci Segment Number : 0x{PciSegNum:02X}")
 
-     # UART Clock Frequency : Offset 76, Length 4 Byte
-    Row,Col = TransferOffsetToArray(OFFSET_UART_CLK_FREQ)
-    UartClkByte0 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(OFFSET_UART_CLK_FREQ+1)
-    UartClkByte1 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(OFFSET_UART_CLK_FREQ+2)
-    UartClkByte2 = int(HexDumpArray[Row][Col],16)
-    Row,Col = TransferOffsetToArray(OFFSET_UART_CLK_FREQ+3)
-    UartClkByte3 = int(HexDumpArray[Row][Col],16)
-
-    UartClk = (UartClkByte3<<24) | (UartClkByte2<<16) | (UartClkByte1<<8) | UartClkByte0
+    # UART Clock Frequency : Offset 76, Length 4 Byte
+    UartClk = Call4BytesDecode(OFFSET_UART_CLK_FREQ, HexDumpArray)
     print(f"[0x4C 04]UART Clock Frequency : 0x{UartClk:08X}")   
 
 def ConfigSpaceStructure(HexDumpArray, StrOffset):
-    BaseAddrByte = {}
-    Reserved = {}
 
     OFFSET_CON_SPACE_STR = 44
     OFFSET_PCI_SEG = 8
@@ -447,11 +426,7 @@ def ConfigSpaceStructure(HexDumpArray, StrOffset):
     OFFSET_END_BUS = 11
     OFFSET_RESERVED = 12
     
-    for i in range(8):
-        Row,Col = TransferOffsetToArray(OFFSET_CON_SPACE_STR + StrOffset + i)
-        BaseAddrByte[i] = int(HexDumpArray[Row][Col],16) 
-
-    BaseAddr = (BaseAddrByte[7]<<56) | (BaseAddrByte[6]<<48) | (BaseAddrByte[5]<<40) | (BaseAddrByte[4]<<32) | (BaseAddrByte[3]<<24) | (BaseAddrByte[2]<<16) | (BaseAddrByte[1]<<8) | BaseAddrByte[0]
+    BaseAddr = Call8BytesDecode(OFFSET_CON_SPACE_STR + StrOffset, HexDumpArray)
     print(f"[0x{(OFFSET_CON_SPACE_STR + StrOffset):02X} 08]Base Address : 0x{BaseAddr:016X}")
 
     # Pci Seg : Offset 8, Length 2 Byte
@@ -473,25 +448,16 @@ def ConfigSpaceStructure(HexDumpArray, StrOffset):
     print(f"[0x{(OFFSET_CON_SPACE_STR + StrOffset + OFFSET_END_BUS):02X} 01]Pci End Bus: 0x{PciEndBus:02X}")
 
     # Reserved : Offset 12, Length 4 Byte
-    for i in range(4):
-        Row,Col = TransferOffsetToArray(OFFSET_CON_SPACE_STR + StrOffset + OFFSET_RESERVED + i)
-        Reserved[i] = int(HexDumpArray[Row][Col],16)
-    ReservedVal = (Reserved[3]<<24) | (Reserved[2]<<16) | (Reserved[1]<<8) | Reserved[0]
-             
+    ReservedVal = Call4BytesDecode(OFFSET_CON_SPACE_STR + StrOffset + OFFSET_RESERVED, HexDumpArray)
     print(f"[0x{(OFFSET_CON_SPACE_STR + StrOffset + OFFSET_RESERVED):02X} 04]Reserved: 0x{ReservedVal:08X}")    
 
 def DumpMCFG(HexDumpArray):
-    ReservedByte = {}
 
     OFFSET_RESERVED = 36
     OFFSET_CON_SPACE_STR = 44
 
     # Reserved : Offset 36, Length 8 Byte
-    for i in range(8):
-        Row,Col = TransferOffsetToArray(OFFSET_RESERVED+i)
-        ReservedByte[i] = int(HexDumpArray[Row][Col],16) 
-
-    Reserved = (ReservedByte[7]<<56) | (ReservedByte[6]<<48) | (ReservedByte[5]<<40) | (ReservedByte[4]<<32) | (ReservedByte[3]<<24) | (ReservedByte[2]<<16) | (ReservedByte[1]<<8) | ReservedByte[0]
+    Reserved = Call8BytesDecode(OFFSET_RESERVED, HexDumpArray)
     print(f"[0x24 08]Reserved : 0x{Reserved:016X}")
 
     # Read table length
@@ -504,7 +470,314 @@ def DumpMCFG(HexDumpArray):
     for i in range(StructureNum):
         print("==================================")
         ConfigSpaceStructure(HexDumpArray, i*16)
+
+def DecodeFlag(Value):
+    TimerInterruptMode = Value & CommonLib.BIT0
+    TimerInterruptPolarity = (Value & CommonLib.BIT1) >> 1
+    AlwaysOnCapability = (Value & CommonLib.BIT2) >> 2
+
+    match TimerInterruptMode:
+        case 0:
+            print("0: Interrupt is Level triggered")
+        case 1:
+            print("1: Interrupt is Edge triggered")
+
+    match TimerInterruptPolarity:
+        case 0:
+            print("0: Interrupt is Active high")
+        case 1:
+            print("1: Interrupt is Active low")
+
+    match AlwaysOnCapability:
+        case 0:
+            print("0: Always On Capability")
+        case 1:
+            print("1: Always On Capability")
+
+def DecodeGTFlag(Value):
+    TimerInterruptMode = Value & CommonLib.BIT0
+    TimerInterruptPolarity = (Value & CommonLib.BIT1) >> 1
+
+    match TimerInterruptMode:
+        case 0:
+            print("0: Interrupt is Level triggered")
+        case 1:
+            print("1: Interrupt is Edge triggered")
+
+    match TimerInterruptPolarity:
+        case 0:
+            print("0: Interrupt is Active high")
+        case 1:
+            print("1: Interrupt is Active low")
+          
+def DecodeCommonFlag(Value):
+    SecureTimer = Value & CommonLib.BIT0
+    AlwaysOnCapability = (Value & CommonLib.BIT1) >> 1
+
+    match SecureTimer:
+        case 0:
+            print("0: Timer is Non-secure")
+        case 1:
+            print("1: Timer is Secure")
+
+    match AlwaysOnCapability:
+        case 0:
+            print("0: Always On Capability")
+        case 1:
+            print("1: Always On Capability")
+
+def DecodeArmWdFlag(Value):
+    TimerInterruptMode = Value & CommonLib.BIT0
+    TimerInterruptPolarity = (Value & CommonLib.BIT1) >> 1
+    SecureTimer = (Value & CommonLib.BIT2) >> 2
+
+    match TimerInterruptMode:
+        case 0:
+            print("0: Interrupt is Level triggered")
+        case 1:
+            print("1: Interrupt is Edge triggered")
+
+    match TimerInterruptPolarity:
+        case 0:
+            print("0: Interrupt is Active high")
+        case 1:
+            print("1: Interrupt is Active low")
+    
+    match SecureTimer:
+        case 0:
+            print("0: Timer is Non-secure")
+        case 1:
+            print("1: Timer is Secure")
+
+def GTBlockTimerStructure(HexDumpArray, StrOffset):
+    OFFSET_FRAME_NUM = 124
+    OFFSET_RESERVED = 125
+    OFFSET_PHY_ADDR = 128
+    OFFSET_EL0_PHY_ADDR = 136
+    OFFSET_TIMER_INT = 144
+    OFFSET_TIMER_FLAGS = 148
+    OFFSET_VIR_TIMER_INT = 152
+    OFFSET_VIR_TIMER_FLAGS = 156
+    OFFSET_COMMON_TIMER_FLAGS = 160
+
+    print("==================================")
+    print("[GT Block Timer Structure]")
+
+    # GT Frame Number : Offset 0, Length 1 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_FRAME_NUM + StrOffset)
+    FrameNum = int(HexDumpArray[Row][Col],16)
+    print(f"[0x{(OFFSET_FRAME_NUM + StrOffset):02X} 01]GT Frame Number : 0x{FrameNum:02X}")
+    
+    # Reserved : Offset 1, Length 3 Byte
+    Reserved = Call3BytesDecode(OFFSET_RESERVED + StrOffset, HexDumpArray)
+    print(f"[0x{(OFFSET_RESERVED + StrOffset):02X} 03]Reserved : 0x{Reserved:06X}")
+
+    # GTx Physical Address : Offset 4, Length 8 Byte
+    PhyAddr = Call8BytesDecode(OFFSET_PHY_ADDR + StrOffset, HexDumpArray)
+    print(f"[0x{(OFFSET_PHY_ADDR + StrOffset):02X} 08]Physical Address : 0x{PhyAddr:016X}")
+
+    # GTx EL0 Physical Address : Offset 12, Length 8 Byte
+    El0PhyAddr = Call8BytesDecode(OFFSET_EL0_PHY_ADDR + StrOffset, HexDumpArray)
+    print(f"[0x{(OFFSET_EL0_PHY_ADDR + StrOffset):02X} 08]EL0 Physical Address : 0x{El0PhyAddr:016X}")
+
+    # GTx Physical Timer GSIV : Offset 20, Length 4 Byte
+    El0TimerInt = Call4BytesDecode(OFFSET_TIMER_INT + StrOffset, HexDumpArray)
+    print(f"[0x{(OFFSET_TIMER_INT + StrOffset):02X} 04]Timer Interrupt : 0x{El0TimerInt:08X}")      
+
+    # GTx Physical Timer Flags : Offset 24, Length 4 Byte
+    El0TimerFlags = Call4BytesDecode(OFFSET_TIMER_FLAGS + StrOffset, HexDumpArray)
+    print(f"[0x{(OFFSET_TIMER_FLAGS + StrOffset):02X} 04]Timer Flags : 0x{El0TimerFlags:08X}")
+    DecodeGTFlag(El0TimerFlags)
+
+    # GTx Virtual Timer GSIV : Offset 28, Length 4 Byte
+    VirTimerInt = Call4BytesDecode(OFFSET_VIR_TIMER_INT + StrOffset, HexDumpArray)
+    print(f"[0x{(OFFSET_VIR_TIMER_INT + StrOffset):02X} 04]Virtual Timer Interrupt : 0x{VirTimerInt:08X}")      
+
+    # GTx Physical Timer Flags : Offset 32, Length 4 Byte
+    VirTimerFlags = Call4BytesDecode(OFFSET_VIR_TIMER_FLAGS + StrOffset, HexDumpArray)
+    print(f"[0x{(OFFSET_VIR_TIMER_FLAGS + StrOffset):02X} 04]Virtual Timer Flags : 0x{VirTimerFlags:08X}")
+    DecodeGTFlag(VirTimerFlags)
+
+    # GTx Common Flags : Offset 36, Length 4 Byte
+    CommonTimerFlags = Call4BytesDecode(OFFSET_COMMON_TIMER_FLAGS + StrOffset, HexDumpArray)
+    print(f"[0x{(OFFSET_COMMON_TIMER_FLAGS + StrOffset):02X} 04]Common Timer Flags : 0x{CommonTimerFlags:08X}")
+    DecodeCommonFlag(CommonTimerFlags)                 
+
+def DumpGTDT(HexDumpArray):
+
+    OFFSET_CON_COUNTER_PHY_ADDR = 36
+    OFFSET_RESERVED = 44
+    OFFSET_SEL1_INT = 48
+    OFFSET_SEL1_TIMER = 52
+    OFFSET_NON_SEL1_INT = 56
+    OFFSET_NON_SEL1_TIMER = 60   
+    OFFSET_VIR_SEL1_INT = 64
+    OFFSET_VIR_SEL1_TIMER = 68 
+    OFFSET_EL2_INT = 72
+    OFFSET_EL2_TIMER = 76
+    OFFSET_COUN_READ_PHY_ADDR = 80
+    OFFSET_PLT_TIMER_COUNT = 88
+    OFFSET_PLT_TIMER_OFFSET = 92
+    OFFSET_VIR_EL2_INT = 96
+    OFFSET_VIR_EL2_TIMER = 100
+    OFFSET_PLT_TIMER_STR_TYPE = 104
+    OFFSET_PLT_TIMER_STR_LENGTH = 105
+    OFFSET_PLT_TIMER_STR_RESERVED = 107
+    OFFSET_PLT_TIMER_STR_PHY_ADDR = 108
+    OFFSET_GT_BLOCK_TIMER_COUNT = 116
+    OFFSET_GT_BLOCK_TIMER_OFFSET = 120
+    OFFSET_ARM_WD_LENGTH = 1
+    OFFSET_ARM_WD_RESERVED = 3
+    OFFSET_ARM_WD_PHY_ADDR = 4
+    OFFSET_ARM_WD_CON_PHY_ADDR = 12
+    OFFSET_ARM_WD_TIMER_INT = 20
+    OFFSET_ARM_WD_TIMER_FLAGS = 24
+
+    # Counter Block Address : Offset 36, Length 8 Byte
+    ConCounterPhyAddr = Call8BytesDecode(OFFSET_CON_COUNTER_PHY_ADDR, HexDumpArray)
+    print(f"[0x24 08]Counter Block Address : 0x{ConCounterPhyAddr:016X}")
+
+    # Reserved : Offset 44, Length 4 Byte
+    Reserved = Call4BytesDecode(OFFSET_RESERVED, HexDumpArray)
+    print(f"[0x2C 04]Reserved : 0x{Reserved:08X}")
+
+    # Secure EL1 Timer GSIV : Offset 48, Length 4 Byte
+    Sel1Int = Call4BytesDecode(OFFSET_SEL1_INT, HexDumpArray)
+    print(f"[0x30 04]Secure EL1 Timer GSIV : 0x{Sel1Int:08X}")
+
+    # Secure EL1 Timer Flags : Offset 52, Length 4 Byte
+    Sel1Timer = Call4BytesDecode(OFFSET_SEL1_TIMER, HexDumpArray)
+    print(f"[0x34 04]Secure EL1 Timer Flags : 0x{Sel1Timer:08X}")
+    DecodeFlag(Sel1Timer)
+
+    print("==================================")
+
+    # Non-Secure EL1 Timer GSIV : Offset 56, Length 4 Byte
+    NonSel1Int = Call4BytesDecode(OFFSET_NON_SEL1_INT, HexDumpArray)
+    print(f"[0x38 04]Non-Secure EL1 Timer GSIV : 0x{NonSel1Int:08X}")
+
+    # Non-Secure EL1 Timer Flags : Offset 60, Length 4 Byte
+    NonSel1Timer = Call4BytesDecode(OFFSET_NON_SEL1_TIMER, HexDumpArray)
+    print(f"[0x3C 04]Non-Secure EL1 Timer Flags : 0x{NonSel1Timer:08X}")
+    DecodeFlag(NonSel1Timer)
+
+    print("==================================")
+
+    # Virtual EL1 Timer GSIV : Offset 64, Length 4 Byte
+    VirSel1Int = Call4BytesDecode(OFFSET_VIR_SEL1_INT, HexDumpArray)
+    print(f"[0x40 04]Virtual EL1 Timer GSIV : 0x{VirSel1Int:08X}")
+
+    # Virtual EL1 Timer Flags : Offset 68, Length 4 Byte
+    VirSel1Timer = Call4BytesDecode(OFFSET_VIR_SEL1_TIMER, HexDumpArray)
+    print(f"[0x44 04]Virtual EL1 Timer Flags : 0x{VirSel1Timer:08X}")
+    DecodeFlag(VirSel1Timer)   
+
+    print("==================================")
+
+    # EL2 Timer GSIV : Offset 72, Length 4 Byte
+    El2Int = Call4BytesDecode(OFFSET_EL2_INT, HexDumpArray)
+    print(f"[0x48 04]EL2 Timer GSIV : 0x{El2Int:08X}")
+
+    # EL2 Timer Flags : Offset 76, Length 4 Byte
+    El2Timer = Call4BytesDecode(OFFSET_EL2_TIMER, HexDumpArray)
+    print(f"[0x4C 04]EL2 Timer Flags : 0x{El2Timer:08X}")
+    DecodeFlag(El2Timer)   
+
+    print("==================================")
+
+    # Counter Read Base Address : Offset 80, Length 8 Byte
+    ConReadPhyAddr = Call8BytesDecode(OFFSET_COUN_READ_PHY_ADDR, HexDumpArray)
+    print(f"[0x50 08]Counter Read Base Address : 0x{ConReadPhyAddr:016X}")          
+
+    # Platform Timer Count : Offset 88, Length 4 Byte
+    PltTimerCount = Call4BytesDecode(OFFSET_PLT_TIMER_COUNT, HexDumpArray)
+    print(f"[0x58 04]Platform Timer Count : 0x{PltTimerCount:08X}")
+
+    # Platform Timer Offset : Offset 92, Length 4 Byte
+    PltTimerOffset = Call4BytesDecode(OFFSET_PLT_TIMER_OFFSET, HexDumpArray)
+    print(f"[0x5C 04]Platform Timer Offset : 0x{PltTimerOffset:08X}")
+
+    # Virtual EL2 Timer GSIV : Offset 96, Length 4 Byte
+    VirEl2TimerInt = Call4BytesDecode(OFFSET_VIR_EL2_INT, HexDumpArray)
+    print(f"[0x60 04]Virtual EL2 Timer GSIV : 0x{VirEl2TimerInt:08X}")
+
+    # Virtual EL2 Timer Flags : Offset 100, Length 4 Byte
+    VirEl2TimerFlag = Call4BytesDecode(OFFSET_VIR_EL2_TIMER, HexDumpArray)
+    print(f"[0x64 04]Virtual EL2 Timer Flags : 0x{VirEl2TimerFlag:08X}")     
+
+    print("==================================")
+
+    # Platform Timer Structure Type : Offset 104, Length 1 Byte
+    print("Platform Timer Structure:")
+    Row,Col = TransferOffsetToArray(OFFSET_PLT_TIMER_STR_TYPE)
+    PltTimerStructureType = int(HexDumpArray[Row][Col],16)
+
+    # Platform Timer Structure Length : Offset 105, Length 2 Byte
+    StructureLength = Call2BytesDecode(OFFSET_PLT_TIMER_STR_LENGTH,HexDumpArray)
+
+    # Platform Timer Structure Reserved : Offset 107, Length 1 Byte
+    Row,Col = TransferOffsetToArray(OFFSET_PLT_TIMER_STR_RESERVED)
+    PltTimerStructureReserved = int(HexDumpArray[Row][Col],16)
+
+    # Platform Timer Structure Physical Addr : Offset 108, Length 8 Byte
+    PltTimerStructurePhyAddr = Call8BytesDecode(OFFSET_PLT_TIMER_STR_PHY_ADDR,HexDumpArray)
+
+    if(PltTimerStructureType == 0):
+        print("==================================")
+        print("GT Block Structure Format:")
+        print("[0x68 01]Type : 0 [Generic Timer Block]")
+        print(f"[0x69 02]Length : 0x{StructureLength:04X}")
+        print(f"[0x6B 01]Reserved : 0x{PltTimerStructureReserved:02X}")
+        print(f"[0x6C 08]GT Block Physical address : 0x{PltTimerStructurePhyAddr:016X}")
         
+        # GT Block Timer Count : Offset 116, Length 4 Byte
+        GTBlockTimerCount = Call4BytesDecode(OFFSET_GT_BLOCK_TIMER_COUNT,HexDumpArray)
+        print(f"[0x74 04]GT Block Timer Count : 0x{GTBlockTimerCount:08X}")
+
+        # GT Block Timer Offset : Offset 120, Length 4 Byte
+        GTBlockTimerOffset = Call4BytesDecode(OFFSET_GT_BLOCK_TIMER_OFFSET,HexDumpArray)
+        print(f"[0x78 04]GT Block Timer Offset : 0x{GTBlockTimerOffset:08X}")
+
+        for i in range(GTBlockTimerCount):
+            GTBlockTimerStructure(HexDumpArray, (i*40) )
+
+    # Arm Generic Watchdog Structure Format : Offset (0x68 + StructureLength) , Length 28 Byte
+    print("==================================")
+    print("Arm Generic Watchdog Structure:")
+    ArmWatchdogBaseOffset = OFFSET_PLT_TIMER_STR_TYPE + StructureLength
+    Row,Col = TransferOffsetToArray(ArmWatchdogBaseOffset)
+    PltTimerStructureType = int(HexDumpArray[Row][Col],16)
+
+    if(PltTimerStructureType == 1):
+        # Arm Generic Watchdog Timer Structure Type : Offset 0, Length 1 Byte
+        print(f"[0x{ArmWatchdogBaseOffset:02X} 01]Type : 0x{PltTimerStructureType:02X}")
+
+        # Arm Generic Watchdog Timer Structure Length : Offset 1, Length 2 Byte
+        StructureLength = Call2BytesDecode(ArmWatchdogBaseOffset + OFFSET_ARM_WD_LENGTH, HexDumpArray)
+        print(f"[0x{(ArmWatchdogBaseOffset + OFFSET_ARM_WD_LENGTH):02X} 02]Length : 0x{StructureLength:04X}")
+
+        # Reserved : Offset 3, Length 1 Byte
+        Row,Col = TransferOffsetToArray(ArmWatchdogBaseOffset + OFFSET_ARM_WD_RESERVED)
+        Reserved = int(HexDumpArray[Row][Col],16)
+        print(f"[0x{(ArmWatchdogBaseOffset + OFFSET_ARM_WD_RESERVED):02X} 01]Reserved : 0x{Reserved:02X}")
+
+        # RefreshFrame Physical Address : Offset 4, Length 8 Byte
+        ArmWdPhyAddr = Call8BytesDecode(ArmWatchdogBaseOffset + OFFSET_ARM_WD_PHY_ADDR, HexDumpArray)
+        print(f"[0x{(ArmWatchdogBaseOffset + OFFSET_ARM_WD_PHY_ADDR):02X} 08]RefreshFrame Physical Address : 0x{ArmWdPhyAddr:016X}")
+
+        # Watchdog Control Frame Physical Address : Offset 12, Length 8 Byte
+        ArmWdConPhyAddr = Call8BytesDecode(ArmWatchdogBaseOffset + OFFSET_ARM_WD_CON_PHY_ADDR, HexDumpArray)
+        print(f"[0x{(ArmWatchdogBaseOffset + OFFSET_ARM_WD_CON_PHY_ADDR):02X} 08]Control Frame Physical Address : 0x{ArmWdConPhyAddr:016X}")
+
+        # Watchdog Timer GSIV : Offset 20, Length 4 Byte
+        ArmWdInt = Call4BytesDecode(ArmWatchdogBaseOffset + OFFSET_ARM_WD_TIMER_INT, HexDumpArray)
+        print(f"[0x{(ArmWatchdogBaseOffset + OFFSET_ARM_WD_TIMER_INT):02X} 04]Timer Interrupt : 0x{ArmWdInt:08X}")
+
+        # Watchdog Timer Flags : Offset 24, Length 4 Byte
+        ArmWdFlag = Call4BytesDecode(ArmWatchdogBaseOffset + OFFSET_ARM_WD_TIMER_FLAGS, HexDumpArray)
+        print(f"[0x{(ArmWatchdogBaseOffset + OFFSET_ARM_WD_TIMER_FLAGS):02X} 04]Timer Flags : 0x{ArmWdFlag:08X}")
+        DecodeArmWdFlag(ArmWdFlag)        
+
 
 def DumpAcpiTable(AcpiTableString):
     match AcpiTableString:
@@ -516,6 +789,7 @@ def DumpAcpiTable(AcpiTableString):
             DumpMCFG(HexDumpArray)
         case "GTDT":
             HexDumpArray = DumpGeneralData("GTDT")
+            DumpGTDT(HexDumpArray)
         case "APMT":
             HexDumpArray = DumpGeneralData("APMT")
         case "EINJ":
@@ -556,3 +830,5 @@ def DumpAcpiTable(AcpiTableString):
             HexDumpArray = DumpGeneralData("AGDI")
         case "PPTT":
             HexDumpArray = DumpGeneralData("PPTT")
+        case _:
+            DumpGeneralData(AcpiTableString)
