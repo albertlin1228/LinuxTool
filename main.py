@@ -1,6 +1,7 @@
 # Standard Lib
 import array
 import os
+import subprocess
 
 # Create Lib
 import PciBusEnum
@@ -19,7 +20,7 @@ def PciDeviceList():
 
     while True:
         print("==================================")
-        InputVal = input("Which device?")
+        InputVal = input("Which PCI device?")
                 
         if (InputVal == ""):
             break
@@ -40,10 +41,11 @@ def PciDeviceList():
             print("==================================")
                     
             if HeaderLayout == 0:
-                print(f"Type 0(Device) MultiFunction:{MultiFun}")
-                PciBusEnum.CheckBarRegister(HexDumpArray)
+                print(f"[0x0E 01]Type 0(Device) [Bit 7]MultiFunction:{MultiFun}")
+                PciBusEnum.CheckBarRegister(HexDumpArray,0)
             else:
-                print(f"Type 1(Bridge) MultiFunction:{MultiFun}")
+                print(f"[0x0E 01]Type 1(Bridge) [Bit 7]MultiFunction:{MultiFun}")
+                PciBusEnum.CheckBarRegister(HexDumpArray,1)
                 PciBusEnum.CheckBusRelation(HexDumpArray)
 
             PciBusEnum.CheckCmdReg(HexDumpArray)
@@ -125,7 +127,7 @@ def ACPITableList():
 
     while True:
         print("==================================")
-        InputVal = input("Which Table?")
+        InputVal = input("Which ACPI Table?")
                 
         if (InputVal == ""):
             break
@@ -139,10 +141,76 @@ def ACPITableList():
         
             break # while (WhichTable <= Count):
 
+def SMBIOSTableList():
+
+    EntryNum = 0
+
+    print("TYPE 0 - Bios Information")
+    print("TYPE 1 - System Information")
+    print("TYPE 2 - Baseboard (or Module) Information")
+    print("TYPE 3 - System Enclosure or Chassis")
+    print("TYPE 4 - Processor Information")
+    print("TYPE 7 - Cache Information")
+    print("TYPE 8 - Port Connector Information")
+    print("TYPE 9 - System Slots")
+    print("TYPE 11 - OEM Strings")
+    print("TYPE 13 - BIOS Language Information")
+    print("TYPE 16 - Physical Memory Array")
+    print("TYPE 17 - Memory Device")
+    print("TYPE 19 - Memory Array Mapped Address")
+    print("TYPE 24 - Hardware Security")
+    print("TYPE 32 - System Boot Information")
+    print("TYPE 33 - 64-Bit Memory Error Information")
+    print("TYPE 38 - IPMI Device Information")
+    print("TYPE 44 - Processor Additional Information")
+    print("TYPE 45 - Firmware Inventory Information")
+    print("TYPE 127 - End-Of-Table")
+    print("==================================")
+
+    while True:
+
+        InputVal = input("Which type of SMBIOS Table?")
+                
+        if (InputVal == ""):
+            break
+                
+        for Type in range(128):
+            for Entry in range(20):
+                TypeNum = f"{str(Type)}-{str(Entry)}"
+                FileOpen = os.path.join("/sys/firmware/dmi/entries/", str(TypeNum))
+
+                if os.access(FileOpen, os.F_OK):
+                    #print(f"Find {TypeNum}")
+                    EntryNum += 1
+                     
+
+        WhichTable = int(InputVal)
+        print("==================================")
+
+        while (WhichTable <= Type):
+            for Type in range(128):
+                for Entry in range(20):
+                    TypeNum = f"{str(Type)}-{str(Entry)}"
+                    FileOpen = os.path.join("/sys/firmware/dmi/entries/", str(TypeNum))
+                    
+                    if Type == WhichTable:
+
+                        SmbiosTableHexDumpCmd = f"hexdump -C /sys/firmware/dmi/entries/{TypeNum}/raw"
+
+                        if os.access(FileOpen, os.F_OK):
+                            SmbiosStr = subprocess.run(SmbiosTableHexDumpCmd, capture_output=True, text=True, shell=True)
+                            print(SmbiosStr.stdout)
+
+            SmbiosTableCmd = f"sudo dmidecode -t {WhichTable}"
+            SmbiosStr = subprocess.run(SmbiosTableCmd, capture_output=True, text=True, shell=True)
+            print(SmbiosStr.stdout)
+
+        
+            break # while (WhichTable <= Count):  
 
 # Main prompt
-
 while True:
+    print("==================================")
     print("Select Operation:\n0:PCI device List\n1:ACPI table\n2:SMBIOS table\n")
     Select = int(input("Selection:"))
 
@@ -151,4 +219,7 @@ while True:
             PciDeviceList()
         case 1:
             ACPITableList()
+        case 2:
+            SMBIOSTableList()
+
         
