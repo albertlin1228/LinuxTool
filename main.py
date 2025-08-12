@@ -1,11 +1,11 @@
 # Standard Lib
-import array
 import os
 import subprocess
 
 # Create Lib
 import PciBusEnum
 import ACPITable
+import CpuFreq
 
 POWER_MGMT_ID = 0x1     # Power Mgmt id 
 MSI_X_CAP_ID = 0x11     # MSI cap id
@@ -208,10 +208,43 @@ def SMBIOSTableList():
         
             break # while (WhichTable <= Count):  
 
+def CpuFreqSetting():
+
+    TablePath = "/sys/devices/system/cpu/enabled"
+    if os.path.exists(TablePath):
+        with open(TablePath,'r') as file:
+            CoreNumStr = file.read()
+
+    print("==================================")
+
+    # core number, ex: 0-191
+    StartCoreNum = CoreNumStr[0]
+    EndCoreNum = str(CoreNumStr[2]) + str(CoreNumStr[3]) + str(CoreNumStr[4])
+
+    CoreNum = int(EndCoreNum) - int(StartCoreNum) + 1
+
+    print(f"Start Core Number:{StartCoreNum}\nEnd Core Number:{EndCoreNum}\nCore Numbers:{CoreNum}")
+    ReadOrWrite = int(input("(0) Read\n(1) Write\nWhich selection?"))
+    
+    if ReadOrWrite == 0:
+        print("(0) Read single core\n(1) Read all cores")
+        ReadNumbers = int(input("Which selection?"))
+        if ReadNumbers:
+            CpuFreq.ListCurrentCoreNumber(CoreNum, 1)
+        else:
+            CpuFreq.ListCurrentCoreNumber(CoreNum, 0)
+    else:
+        print("(0) Write single core\n(1) Write all cores\n")
+        WriteNumbers = int(input("Which selection?"))
+        if WriteNumbers == 0:
+            CpuFreq.WriteCoreNumber(CoreNum, 0)
+        elif WriteNumbers == 1:
+            CpuFreq.WriteCoreNumber(CoreNum, 1)        
+
 # Main prompt
 while True:
     print("==================================")
-    print("Select Operation:\n0:PCI device List\n1:ACPI table\n2:SMBIOS table\n")
+    print("Select Operation:\n 0:PCI device List\n 1:ACPI table\n 2:SMBIOS table\n 3:CPU frequency setting")
     Select = int(input("Selection:"))
 
     match Select:
@@ -221,5 +254,5 @@ while True:
             ACPITableList()
         case 2:
             SMBIOSTableList()
-
-        
+        case 3:
+            CpuFreqSetting()

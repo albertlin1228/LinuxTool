@@ -1,8 +1,7 @@
 import os
 import subprocess
 import CommonLib
-#import mmap
-#import struct
+
 """
 from periphery import MMIO
 
@@ -106,8 +105,10 @@ def PciEnumOperation():
                         
                         LsPciCmd = f"sudo lspci -d {str(HexVendor[PfaNumberIndex])}:{str(HexDevice[PfaNumberIndex])}"
                         Line0Str = subprocess.Popen(LsPciCmd, stdout=subprocess.PIPE, text=True, shell=True)
+                        Line0Str = Line0Str.stdout.readline()
+                        Line0Str = Line0Str.strip()
 
-                        print(f"({str(PfaNumberIndex).zfill(2)}) : VID: 0x{DigitVendor:04X} DID: 0x{DigitDevice:04X} | {Line0Str.stdout.readline()}" )
+                        print(f"({str(PfaNumberIndex).zfill(2)}) : VID: 0x{DigitVendor:04X} DID: 0x{DigitDevice:04X} | {Line0Str}" )
 
                         PfaNumberIndex += 1
 
