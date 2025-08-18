@@ -132,6 +132,7 @@ def ListCurrentCoreNumber(CoreNum,ReadNumbers):
     if ReadNumbers == 1:
         OfflineCoreNum, OfflineCore = ReadAllCoreData(CoreNum)
         
+        print("==================================")
         for i in range(OfflineCoreNum):
             print(f"Core{OfflineCore[i]} is offline")
     else:
@@ -155,6 +156,32 @@ def WriteAllCoreData(TotalCoreNum, FreqVal):
         WriteSingleCoreData(i,FreqVal)
         time.sleep(0.01)
 
+def WriteGovernor(TotalCoreNum, SingleOrAll, WhichCoreNum, WhichGovernor):
+    
+    match WhichGovernor:
+        case 0:
+            Governor = str("conservative")
+        case 1:
+            Governor = str("ondemand")
+        case 2:
+            Governor = str("userspace")
+        case 3:
+            Governor = str("powersave")
+        case 4:
+            Governor = str("performance")
+        case 5:
+            Governor = str("schedutil")
+
+    if SingleOrAll == 0:
+        CpuNum = f"cpu{WhichCoreNum}"
+        ScalGovernorPath = str("/sys/devices/system/cpu/") + str(CpuNum) + str("/cpufreq/scaling_governor")
+        SetGovernor(WhichCoreNum, ScalGovernorPath, Governor)
+    else:
+        for i in range(TotalCoreNum):
+            CpuNum = f"cpu{i}"
+            ScalGovernorPath = str("/sys/devices/system/cpu/") + str(CpuNum) + str("/cpufreq/scaling_governor")
+            SetGovernor(i, ScalGovernorPath, Governor)
+
 def WriteCoreNumber(TotalCoreNum,WriteNumbers):
 
     print("==================================")
@@ -162,7 +189,16 @@ def WriteCoreNumber(TotalCoreNum,WriteNumbers):
     if WriteNumbers == 1:
         FreqVal = int(input("Input speed value:"))
         WriteAllCoreData(TotalCoreNum,FreqVal)
-    elif WriteNumbers ==0:
+    elif WriteNumbers == 0:
         WhichCoreNum = int(input("Which core number:"))
-        FreqVal = int(input("Speed value:"))
+        FreqVal = int(input("Input speed value:"))
         WriteSingleCoreData(WhichCoreNum,FreqVal)
+    elif WriteNumbers == 2:
+        SingleOrAll = int(input("(0) Single core\n(1) All cores\nWhich selection:"))
+        if SingleOrAll == 0:
+            WhichCoreNum = int(input("Which core number:"))
+        else:
+            WhichCoreNum = 0
+
+        WhichGovernor = int(input("(0) conservative\n(1) ondemand\n(2) userspace\n(3) powersave\n(4) performance\n(5) schedutil\nWhich selection:"))
+        WriteGovernor(TotalCoreNum, SingleOrAll, WhichCoreNum, WhichGovernor)

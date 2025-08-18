@@ -91,6 +91,9 @@ def PciDeviceList():
 
                 CheckPcieExt = input("Check Pcie Extend Capability?(y/n)")
 
+                if CheckPcieExt == "":
+                    break
+
                 while(CheckPcieExt == "y"):
                     
                     # List Pcie content
@@ -224,28 +227,56 @@ def CpuFreqSetting():
     CoreNum = int(EndCoreNum) - int(StartCoreNum) + 1
 
     print(f"Start Core Number:{StartCoreNum}\nEnd Core Number:{EndCoreNum}\nCore Numbers:{CoreNum}")
-    ReadOrWrite = int(input("(0) Read\n(1) Write\nWhich selection?"))
     
-    if ReadOrWrite == 0:
-        print("(0) Read single core\n(1) Read all cores")
-        ReadNumbers = int(input("Which selection?"))
-        if ReadNumbers:
-            CpuFreq.ListCurrentCoreNumber(CoreNum, 1)
-        else:
-            CpuFreq.ListCurrentCoreNumber(CoreNum, 0)
-    else:
-        print("(0) Write single core\n(1) Write all cores\n")
-        WriteNumbers = int(input("Which selection?"))
-        if WriteNumbers == 0:
-            CpuFreq.WriteCoreNumber(CoreNum, 0)
-        elif WriteNumbers == 1:
-            CpuFreq.WriteCoreNumber(CoreNum, 1)        
+    while True:
+        print("==================================")
+        ReadOrWrite = input("(0) Read\n(1) Write\nWhich selection?")
+
+        if ReadOrWrite == '':
+            break
+
+        ReadOrWrite = int(ReadOrWrite)
+
+        if ReadOrWrite == 0:
+            print("(0) Read single core\n(1) Read all cores")
+            ReadNumbers = input("Which selection?")
+            
+            if ReadNumbers == "":
+                break
+            
+            ReadNumbers = int(ReadNumbers)
+
+            if ReadNumbers:
+                CpuFreq.ListCurrentCoreNumber(CoreNum, 1)
+            else:
+                CpuFreq.ListCurrentCoreNumber(CoreNum, 0)
+
+        elif ReadOrWrite == 1:
+            print("(0) Write single core\n(1) Write all cores\n(2) Write governor")
+            WriteNumbers = input("Which selection?")
+
+            if(WriteNumbers == ""):
+                break
+
+            WriteNumbers = int(WriteNumbers)
+
+            if WriteNumbers == 0:
+                CpuFreq.WriteCoreNumber(CoreNum, 0)
+            elif WriteNumbers == 1:
+                CpuFreq.WriteCoreNumber(CoreNum, 1)
+            elif WriteNumbers == 2:
+                CpuFreq.WriteCoreNumber(CoreNum, 2)     
 
 # Main prompt
 while True:
     print("==================================")
     print("Select Operation:\n 0:PCI device List\n 1:ACPI table\n 2:SMBIOS table\n 3:CPU frequency setting")
-    Select = int(input("Selection:"))
+    Select = input("Selection:")
+
+    if Select == '':
+        break
+
+    Select = int(Select)
 
     match Select:
         case 0:
