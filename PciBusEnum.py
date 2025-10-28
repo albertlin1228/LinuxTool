@@ -237,11 +237,12 @@ def CheckBarRegister(HexDumpArray,DeviceType):
         Prefetchable = 0
 
     if (Bar0Value & CommonLib.BIT0) == True:
-        print("[0x10]\n(Bit 0)IO space indicator")
+        print("[0x10]Base Address Registers\n(Bit 0)1 IO space indicator")
     else:
         if (DeviceType == 0):
             if ((Bar0Value & (CommonLib.BIT1 | CommonLib.BIT2)) >> 1) == CommonLib.BIT1:
-                print("[0x10]\n(Bit 1:2)64 bits Memory space indicator","Prefetchable" if(Prefetchable == 1) else "Non Prefetchable")
+                print(f"[0x10]Base Address Registers\n(Bit 0)0 Memory space indicator\n(Bit 1:2)10 64 bits\n(Bit 3){Prefetchable:02b}")
+                print("Prefetchable" if(Prefetchable == 1) else "Non Prefetchable")
 
                 for BarIndex in range(6): 
                     #SetPciCmd = f"sudo setpci -d {str(HexVendor)}:{str(HexDevice)} {str( hex(int(OFFSET_32_BAR0_TYPE,16) + 4*BarIndex))}.l"
@@ -261,7 +262,8 @@ def CheckBarRegister(HexDumpArray,DeviceType):
                 print(f"BAR 2 : 0x{Bar2Value:016X}")
 
             elif ((Bar0Value & (CommonLib.BIT1 | CommonLib.BIT2)) >> 1) == 0:
-                print("[0x10]\n(Bit 1:2)32 bits Memory space indicator","Prefetchable" if(Prefetchable == 1) else "Non Prefetchable")
+                print(f"[0x10]Base Address Registers\n(Bit 0)0 Memory space indicator\n(Bit 1:2)00 32 bits\n(Bit 3){Prefetchable:02b}")
+                print("Prefetchable" if(Prefetchable == 1) else "Non Prefetchable")
                 print(f"BAR 0 : 0x{Bar0Value:08X}")
                 Bar32ValueArray[0] = Bar0Value
                 for BarIndex in range(1,6): 
@@ -277,7 +279,8 @@ def CheckBarRegister(HexDumpArray,DeviceType):
 
         else: #if (DeviceType == 0):
             if ((Bar0Value & (CommonLib.BIT1 | CommonLib.BIT2)) >> 1) == CommonLib.BIT1:
-                print("[0x10]\n(Bit 1:2)64 bits Memory space indicator","Prefetchable" if(Prefetchable == 1) else "Non Prefetchable")
+                print(f"[0x10]Base Address Registers\n(Bit 0)0 Memory space indicator\n(Bit 1:2)10 64 bits\n(Bit 3){Prefetchable:02b}")
+                print("Prefetchable" if(Prefetchable == 1) else "Non Prefetchable")
                 print(f"BAR 0 : 0x{Bar0Value:08X}")
                 Row,Col = TransferOffsetToArray(OFFSET_32_BAR0_TYPE + 4)
                 BarValue = ReadByDword(HexDumpArray,Row,Col)
@@ -285,7 +288,8 @@ def CheckBarRegister(HexDumpArray,DeviceType):
                 Bar32ValueArray[1] = BarValue
                 print(f"BAR 1 : 0x{Bar32ValueArray[1]:08X}")
             elif ((Bar0Value & (CommonLib.BIT1 | CommonLib.BIT2)) >> 1) == 0:
-                print("[0x10]\n(Bit 1:2)32 bits Memory space indicator","Prefetchable" if(Prefetchable == 1) else "Non Prefetchable")
+                print(f"[0x10]Base Address Registers\n(Bit 0)0 Memory space indicator\n(Bit 1:2)00 32 bits\n(Bit 3){Prefetchable:02b}")
+                print("Prefetchable" if(Prefetchable == 1) else "Non Prefetchable")
                 print(f"BAR 0 : 0x{Bar0Value:08X}")
                 
                 Row,Col = TransferOffsetToArray(OFFSET_32_BAR0_TYPE + 4)

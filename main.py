@@ -41,10 +41,12 @@ def PciDeviceList():
             print("==================================")
                     
             if HeaderLayout == 0:
-                print(f"[0x0E 01]Type 0(Device) [Bit 7]MultiFunction:{MultiFun}")
+                print(f"[0x0E 01]Header Type\n(Bit 0:6):{HeaderLayout:07X} Type 0(Device)\n(Bit 7)MultiFunction:{MultiFun}")
+                print("==================================")
                 PciBusEnum.CheckBarRegister(HexDumpArray,0)
             else:
-                print(f"[0x0E 01]Type 1(Bridge) [Bit 7]MultiFunction:{MultiFun}")
+                print(f"[0x0E 01]Header Type\n(Bit 0:6):{HeaderLayout:07X} Type 1(Bridge)\n(Bit 7)MultiFunction:{MultiFun}")
+                print("==================================")
                 PciBusEnum.CheckBarRegister(HexDumpArray,1)
                 PciBusEnum.CheckBusRelation(HexDumpArray)
 
