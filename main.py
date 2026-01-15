@@ -222,8 +222,13 @@ def CpuFreqSetting():
 
     print("==================================")
 
+    length = len(CoreNumStr.strip())
+    if length == 1:
+        print(f"Not porting for /sys/devices/system/cpu/enabled, value is {CoreNumStr.strip()}.\n")
+        return
     # core number, ex: 0-191
     StartCoreNum = CoreNumStr[0]
+    
     EndCoreNum = str(CoreNumStr[2]) + str(CoreNumStr[3]) + str(CoreNumStr[4])
 
     CoreNum = int(EndCoreNum) - int(StartCoreNum) + 1
